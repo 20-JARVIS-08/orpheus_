@@ -1,9 +1,10 @@
 /* ORPHEUS service worker: makes the web version installable and usable offline.
    Bump VERSION whenever you upload a new index.html so visitors get the update. */
-const VERSION = 'orpheus-v4';
+const VERSION = 'orpheus-v6';
 const SHELL = [
   './',
   'index.html',
+  'vocal-worklet.js',
   'manifest.webmanifest',
   'fonts/fonts.css',
   'fonts/orbitron-latin-500-normal.woff2',

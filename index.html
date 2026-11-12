@@ -209,7 +209,7 @@ const coarse=matchMedia('(pointer:coarse)').matches;
 let st={};try{st=JSON.parse(localStorage.getItem('orpheus')||'{}')}catch{}
 const F=[31,62,125,250,500,1000,2000,4000,8000,16000];
 const PR={Flat:[0,0,0,0,0,0,0,0,0,0],Rock:[4,3,2,0,-1,-1,1,3,4,4],Jazz:[3,2,1,2,-2,-2,0,1,2,3],Pop:[-1,1,3,4,3,0,-1,-1,1,2],Classical:[4,3,2,1,-1,-1,0,2,3,4]};
-const D={a:'#e6e6e6',vc:'#e6e6e6',sp:1,r:'12px',rv:1,xf:0,eq:Array(10).fill(0),bass:0,tre:0,voc:0,sur:0,rev:0,mono:0,bal:0,norm:0,vol:.8,rate:1,sh:0,rp:0,amb:1,prof:{},keys:{play:' ',next:'ArrowRight',prev:'ArrowLeft',mute:'m',fav:'f',focus:'z'}};
+const D={a:'#e6e6e6',vc:'#e6e6e6',sp:1,r:'12px',rv:1,xf:0,eq:Array(10).fill(0),bass:0,tre:0,voc:0,sur:0,rev:0,mono:0,vr:0,vrk:1,vrw:.6,vrc:0,bal:0,norm:0,vol:.8,rate:1,sh:0,rp:0,amb:1,prof:{},keys:{play:' ',next:'ArrowRight',prev:'ArrowLeft',mute:'m',fav:'f',focus:'z',vocal:'v'}};
 const cfg={...D,...st.cfg};cfg.keys={...D.keys,...cfg.keys};
 /* one-time migration: visitors with an old saved 2px (sharp) default get the new round default; their later choices are kept */
 if(st.cfg&&st.cfg.rv!==1)cfg.r=D.r;cfg.rv=1;
@@ -239,7 +239,24 @@ const E=[new Audio(),new Audio()],G=[AC.createGain(),AC.createGain()],bus=AC.cre
 E.forEach((e,i)=>{AC.createMediaElementSource(e).connect(G[i]);G[i].connect(bus);e.onerror=()=>{if(e.src)flash("CAN'T PLAY THIS FILE (FORMAT?)")};e.onended=()=>{if(e===E[cur]&&!xfing){const j=nextI(1);if(j>=0)load(j,0)}}});
 const bass=bq('lowshelf',120),eq=F.map(f=>bq('peaking',f)),tre=bq('highshelf',8000),voc=bq('peaking',2800);
 let n0=bus;[bass,...eq,tre,voc].forEach(n=>{n0.connect(n);n0=n});
-const mono=AC.createGain();mono.channelCountMode='explicit';n0.connect(mono);
+const mono=AC.createGain();mono.channelCountMode='explicit';
+/* vocal remover (karaoke): the lead vocal sits in the centre of the stereo image, so subtracting L-R cancels it.
+   Below ~180 Hz the original is kept (bass + kick are also centred but carry almost no voice), so the track doesn't turn thin. */
+const vrCl=AC.createGain(),vrW=AC.createGain(),vrCut=bq('peaking',1800),vrIn=AC.createGain(),vrOut=AC.createGain(),vrHd=AC.createGain(),vrKg=AC.createGain(),vrSp=AC.createChannelSplitter(2),vrSum=AC.createGain(),vrP=AC.createGain(),vrN=AC.createGain();
+{const f=(t,hz)=>{const a=bq(t,hz),b=bq(t,hz);a.Q.value=b.Q.value=.7071;a.connect(b);return[a,b]};
+const lp=f('lowpass',180),hp=f('highpass',180);
+vrIn.connect(vrCl);vrCl.connect(lp[0]);lp[1].connect(vrOut);
+vrCl.connect(hp[0]);hp[1].connect(vrHd);vrHd.connect(vrOut);
+hp[1].connect(vrSp);vrP.gain.value=Math.SQRT1_2;vrN.gain.value=-Math.SQRT1_2;
+vrSum.channelCount=1;vrSum.channelCountMode='explicit';
+vrSp.connect(vrP,0);vrSp.connect(vrN,1);vrP.connect(vrSum);vrN.connect(vrSum);vrSum.connect(vrKg);vrKg.connect(vrOut)}
+vrCut.Q.value=.6;vrOut.connect(vrCut);vrCut.connect(mono);vrIn.connect(vrW);
+/* smart mode: spectral processor in vocal-worklet.js; until it loads (or if it can't), the classic L-R path above is used */
+let wk=null;
+try{AC.audioWorklet.addModule('vocal-worklet.js').then(()=>{wk=new AudioWorkletNode(AC,'orpheus-vocal',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:'explicit'});vrW.connect(wk);wk.connect(vrOut);ap();if(typeof rr=='function')rr()}).catch(()=>{})}catch{}
+let vrOn=-1;
+const vrRoute=on=>{if(on===vrOn)return;vrOn=on;try{n0.disconnect(mono)}catch{}try{n0.disconnect(vrIn)}catch{}
+if(on)n0.connect(vrIn);else n0.connect(mono)};
 const mix=AC.createGain(),cv=AC.createConvolver(),rv=AC.createGain(),sp=AC.createChannelSplitter(2),mg=AC.createChannelMerger(2),sg=AC.createGain();
 {const l=AC.sampleRate*2.2|0,b=AC.createBuffer(2,l,AC.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<l;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/l,3)}cv.buffer=b}
 mono.connect(mix);mono.connect(cv);cv.connect(rv);rv.connect(mix);mono.connect(sp);
@@ -248,7 +265,7 @@ mg.connect(sg);sg.connect(mix);
 const pan=AC.createStereoPanner(),comp=AC.createDynamicsCompressor(),master=AC.createGain(),an=AC.createAnalyser();an.fftSize=256;
 mix.connect(pan);pan.connect(comp);comp.connect(master);master.connect(an);an.connect(AC.destination);
 const fd=new Uint8Array(128);
-function ap(){eq.forEach((n,i)=>n.gain.value=cfg.eq[i]);bass.gain.value=cfg.bass;tre.gain.value=cfg.tre;voc.gain.value=cfg.voc;sg.gain.value=cfg.sur;rv.gain.value=cfg.rev;mono.channelCount=cfg.mono?1:2;pan.pan.value=cfg.bal;comp.threshold.value=cfg.norm?-26:0;comp.ratio.value=cfg.norm?5:1;master.gain.value=muted?0:cfg.vol;E.forEach(e=>e.playbackRate=cfg.rate);$('#vol').value=cfg.vol}
+function ap(){vrRoute(cfg.vr?1:0);{const t=AC.currentTime;vrKg.gain.setTargetAtTime(cfg.vr?cfg.vrk:0,t,.03);vrHd.gain.setTargetAtTime(cfg.vr?1-cfg.vrk:1,t,.03);vrCl.gain.value=wk?0:1;vrW.gain.value=wk?1:0;vrCut.gain.setTargetAtTime(cfg.vr?-cfg.vrc:0,t,.05);if(wk){wk.parameters.get('k').value=cfg.vrk;wk.parameters.get('t').value=.9-.5*cfg.vrw}}eq.forEach((n,i)=>n.gain.value=cfg.eq[i]);bass.gain.value=cfg.bass;tre.gain.value=cfg.tre;voc.gain.value=cfg.voc;sg.gain.value=cfg.sur;rv.gain.value=cfg.rev;mono.channelCount=cfg.mono?1:2;pan.pan.value=cfg.bal;comp.threshold.value=cfg.norm?-26:0;comp.ratio.value=cfg.norm?5:1;master.gain.value=muted?0:cfg.vol;E.forEach(e=>e.playbackRate=cfg.rate);$('#vol').value=cfg.vol}
 function th(){const s=document.documentElement.style;s.setProperty('--a',cfg.a);s.setProperty('--vc',cfg.vc);s.setProperty('--sp',cfg.sp);s.setProperty('--r',cfg.r);document.body.classList.toggle('noamb',!cfg.amb)}
 /* ID3v2.3/2.4 tags: title, artist, cover */
 const txt=d=>{const e=d[0],b=d.slice(1);return new TextDecoder(e==1?'utf-16le':e==2?'utf-16be':e==3?'utf-8':'windows-1252').decode(b).replace(/[\0﻿]/g,'').trim()};
@@ -401,6 +418,7 @@ function rr(){tabs($('#rt'),[['aud','Audio'],['sty','Style'],['sys','System']],r
 if(rtab=='aud'){P.append(h('h4','','10-band EQ'));const eb=h('div','eqb');F.forEach((f,j)=>{const c=h('div','bd'),i=h('input','vr');i.type='range';i.min=-12;i.max=12;i.step=.5;i.value=cfg.eq[j];i.oninput=()=>{cfg.eq[j]=+i.value;ap();sv()};i._rs=()=>{cfg.eq[j]=0;i.value=0;ap();sv()};c.append(i,h('small','',f<1000?f:f/1000+'k'));eb.append(c)});P.append(eb);
 const s=h('select');s.append(h('option','','Preset…'));[...Object.keys(PR),...Object.keys(cfg.prof)].forEach(k=>s.append(h('option','',k)));s.onchange=()=>{const a=PR[s.value]||cfg.prof[s.value];if(a){cfg.eq=[...a];ap();sv();rr()}};P.append(s);
 P.append(h('h4','','Tone'));sl(P,'Bass boost','bass',0,15,.5);sl(P,'Treble','tre',-12,12,.5);sl(P,'Vocal boost','voc',0,12,.5);
+P.append(h('h4','','Vocal remover'));{const f=h('div','flex');tgl(f,'Remove vocals','vr');P.append(f);sl(P,'Strength','vrk',0,1,.05,v=>Math.round(v*100)+'%');sl(P,'Width','vrw',0,1,.05,v=>Math.round(v*100)+'%');sl(P,'Extra mid cut','vrc',0,15,.5,v=>v+' dB');P.append(h('small','','Mode: '+(wk?'smart (spectral)':'classic')+'. Still hearing the voice? Raise Width (catches off-centre vocals) and Extra mid cut. Works on stereo songs only; reverb and wide backing vocals can remain.'))}
 P.append(h('h4','','Playback'));sl(P,'Speed','rate',.5,2,.05,v=>v+'x');sl(P,'Crossfade','xf',0,12,1,v=>v+'s');
 det(P,'SPACE & BALANCE',d=>{sl(d,'Surround','sur',0,1,.05);sl(d,'Reverb','rev',0,1,.05);sl(d,'Balance L/R','bal',-1,1,.05);const f=h('div','flex');tgl(f,'Mono','mono');tgl(f,'Normalize','norm');d.append(f)});
 det(P,'SAVE EQ PROFILE',d=>{const pn=h('input');pn.placeholder='profile name';d.append(pn,B('Save EQ',()=>{if(pn.value.trim()){cfg.prof[pn.value.trim()]=[...cfg.eq];sv();rr()}}))})}
@@ -426,10 +444,11 @@ const mk=(it,box)=>{if(it==='-'){box.append(h('hr'));return}const d=h('div',it.d
 items.forEach(i=>mk(i,CM));CM.style.display='block';CM.style.left=x+'px';CM.style.top=y+'px';const r=CM.getBoundingClientRect();
 CM.style.left=Math.max(0,Math.min(x,innerWidth-r.width-4))+'px';CM.style.top=Math.max(0,Math.min(y,innerHeight-r.height-4))+'px';if(x+r.width+200>innerWidth)CM.classList.add('fl')}
 const ck=(on,l)=>(on?'✓ ':'   ')+l;
+function vrTog(){cfg.vr=cfg.vr?0:1;ap();sv();flash(cfg.vr?'VOCAL REMOVER ON':'VOCAL REMOVER OFF');if(rtab=='aud')rr()}
 function appItems(){const e=E[cur],id=Q[qi],bc=c=>document.body.classList.contains(c);
 const it=[{t:e.paused?'▶  Play':'⏸  Pause',f:tg},{t:'⏭  Next',f:()=>go(1)},{t:'⏮  Previous',f:()=>go(-1)},'-',
 {t:ck(cfg.sh,'Shuffle'),f:()=>{cfg.sh=cfg.sh?0:1;sv()}},{t:'Repeat: '+['Off','All','One'][cfg.rp],f:()=>{cfg.rp=(cfg.rp+1)%3;sv()}},
-{t:fav.has(id)?'♥  Remove current from favorites':'♡  Add current to favorites',f:favCur,dis:!id},{t:ck(muted,'Mute'),f:mute},'-',
+{t:fav.has(id)?'♥  Remove current from favorites':'♡  Add current to favorites',f:favCur,dis:!id},{t:ck(muted,'Mute'),f:mute},{t:ck(cfg.vr,'Remove vocals (karaoke)   V'),f:vrTog},'-',
 {t:'View',sub:[{t:ck(bc('focus'),'Focus mode'),f:focusT},{t:ck(bc('room'),'Room mode'),f:roomT},{t:ck(cfg.amb,'Ambient glow'),f:()=>{cfg.amb=cfg.amb?0:1;th();sv();if(rtab=='sys')rr()}}]},
 {t:'Images',sub:[{t:'Set track art…',f:()=>$('#fart').click(),dis:!id},{t:'Set background…',f:()=>$('#fbg').click()},{t:'Clear background',f:clearBg}]},
 {t:'Sleep timer',sub:[15,30,60,0].map(m=>({t:m?m+' min':'Off',f:()=>sleep(m)}))}];
@@ -457,7 +476,7 @@ $('#bm').onclick=e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClie
 addEventListener('keydown',e=>{if(e.key=='Escape')hideMenu();if(listen){cfg.keys[listen]=e.key;listen=null;sv();rr();e.preventDefault();return}if(e.target.matches('textarea,select,input:not([type=range])'))return;
 if(e.shiftKey&&(e.key=='ArrowRight'||e.key=='ArrowLeft')){e.preventDefault();seek(e.key=='ArrowRight'?10:-10);return}
 if((e.key=='ArrowUp'||e.key=='ArrowDown')&&!e.target.matches('input[type=range]')){e.preventDefault();vol(e.key=='ArrowUp'?.05:-.05);return}
-const A={play:tg,next:()=>go(1),prev:()=>go(-1),mute,fav:favCur,focus:focusT};for(const k in A)if(cfg.keys[k]==e.key){e.preventDefault();if(e.target.blur)e.target.blur();A[k]();break}});
+const A={play:tg,next:()=>go(1),prev:()=>go(-1),mute,fav:favCur,focus:focusT,vocal:vrTog};for(const k in A)if(cfg.keys[k]==e.key){e.preventDefault();if(e.target.blur)e.target.blur();A[k]();break}});
 /* Two versions of the site: this web version, and the Windows app (shown only in the browser, never inside the app).
    Put the built installers next to index.html in the downloads/ folder, or change the links here. */
 /* On GitHub Pages the installers come from the repo's latest Release (the .exe files are too big for Pages itself).

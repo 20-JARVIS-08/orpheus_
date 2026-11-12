@@ -28,6 +28,7 @@
       "main.js",
       "preload.js",
       "index.html",
+      "vocal-worklet.js",
       "manifest.webmanifest",
       "fonts/**",
       "icons/**",

@@ -233,7 +233,7 @@ function registerProtocol() {
       return serveMedia(req, p);
     }
     const rel = decodeURIComponent(u.pathname).replace(/^\/+/, '') || 'index.html';
-    if (!/^(index\.html|fonts\/[\w.-]+|icons\/[\w.-]+|manifest\.webmanifest)$/.test(rel)) return new Response('not found', { status: 404 });
+    if (!/^(index\.html|vocal-worklet\.js|fonts\/[\w.-]+|icons\/[\w.-]+|manifest\.webmanifest)$/.test(rel)) return new Response('not found', { status: 404 });
     return net.fetch(pathToFileURL(path.join(__dirname, rel)).toString(), { bypassCustomProtocolHandlers: true });
   });
 }

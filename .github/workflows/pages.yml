@@ -21,7 +21,7 @@ jobs:
       - name: Collect website files
         run: |
           mkdir _site
-          cp index.html manifest.webmanifest sw.js _site/
+          cp index.html vocal-worklet.js manifest.webmanifest sw.js _site/
           cp -r fonts icons _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
