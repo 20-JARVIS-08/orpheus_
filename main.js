@@ -2,7 +2,10 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, shell } = requ
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
+<<<<<<< HEAD
 const { Readable } = require('stream');
+=======
+>>>>>>> origin/main
 
 app.setName('ORPHEUS');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -201,6 +204,7 @@ async function openPaths(paths) {
   else pendingOpen.push(...paths);
 }
 
+<<<<<<< HEAD
 /* Audio files with HTTP Range support. Without it Chromium cannot seek (clicking the progress bar restarts the song). */
 const MIME = { '.mp3': 'audio/mpeg', '.flac': 'audio/flac', '.m4a': 'audio/mp4', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.opus': 'audio/ogg', '.aac': 'audio/aac', '.webm': 'audio/webm' };
 async function serveMedia(req, p) {
@@ -222,6 +226,8 @@ async function serveMedia(req, p) {
   return new Response(Readable.toWeb(fs.createReadStream(p, { start, end })), { status, headers: h });
 }
 
+=======
+>>>>>>> origin/main
 /* orpheus://app/index.html, /fonts/*, and /_m/<encoded absolute path> for media */
 function registerProtocol() {
   protocol.handle('orpheus', (req) => {
@@ -230,7 +236,11 @@ function registerProtocol() {
       let p;
       try { p = norm(decodeURIComponent(u.pathname.slice(4))); } catch { return new Response('bad', { status: 400 }); }
       if (!allowed(p)) return new Response('forbidden', { status: 403 });
+<<<<<<< HEAD
       return serveMedia(req, p);
+=======
+      return net.fetch(pathToFileURL(p).toString(), { headers: req.headers, bypassCustomProtocolHandlers: true });
+>>>>>>> origin/main
     }
     const rel = decodeURIComponent(u.pathname).replace(/^\/+/, '') || 'index.html';
     if (!/^(index\.html|fonts\/[\w.-]+|icons\/[\w.-]+|manifest\.webmanifest)$/.test(rel)) return new Response('not found', { status: 404 });
