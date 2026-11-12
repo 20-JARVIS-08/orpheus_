@@ -1,0 +1,103 @@
+{
+  "name": "orpheus",
+  "version": "1.0.1",
+  "description": "ORPHEUS audio player",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --win --dir",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "keywords": [],
+  "author": "Arshia",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@fontsource/orbitron": "^5.3.0",
+    "@fontsource/share-tech-mono": "^5.3.0",
+    "@fontsource/vazirmatn": "^5.3.0",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.orpheus.audio",
+    "productName": "ORPHEUS",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "manifest.webmanifest",
+      "fonts/**",
+      "icons/**",
+      "build/icon.png"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "fileAssociations": [
+        {
+          "ext": "mp3",
+          "name": "MP3 audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "flac",
+          "name": "FLAC audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "m4a",
+          "name": "M4A audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "wav",
+          "name": "WAV audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "ogg",
+          "name": "OGG audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "opus",
+          "name": "OPUS audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "aac",
+          "name": "AAC audio",
+          "role": "Viewer"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "ORPHEUS-Setup.exe"
+    },
+    "portable": {
+      "artifactName": "ORPHEUS-portable.exe"
+    },
+    "compression": "normal"
+  }
+}
