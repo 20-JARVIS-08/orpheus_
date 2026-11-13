@@ -1,5 +1,9 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self' blob: https://0.peerjs.com wss://0.peerjs.com">
+<script>/* Android app only: show any script error on screen (tap the red box to dismiss) so a half-loaded page can be diagnosed */
+(function(){var b,n=0;function show(m){try{if(!window.Capacitor||n++>6)return;if(!b){b=document.createElement('pre');b.style.cssText='position:fixed;z-index:2147483647;left:0;right:0;bottom:0;max-height:50%;overflow:auto;margin:0;padding:8px 10px;background:#500;color:#fff;font:11px/1.35 monospace;white-space:pre-wrap;user-select:text';b.onclick=function(){b.remove();b=null};(document.body||document.documentElement).appendChild(b)}b.textContent+=m+'\n'}catch(e){}}
+addEventListener('error',function(e){if(/ResizeObserver/.test(e.message||''))return;show('JS: '+e.message+' @'+String(e.filename||'').split('/').pop()+':'+e.lineno+':'+e.colno)});
+addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&(r.name=='AbortError'||r.name=='NotAllowedError'))return;show('PROMISE: '+(r&&(r.stack||r.message)||r))});})();</script>
 <title>ORPHEUS</title>
 <meta name="description" content="ORPHEUS audio player: equalizer, visualizer, synced lyrics, playlists. Runs in the browser, installable, and available as a Windows app.">
 <meta name="theme-color" content="#000000">
