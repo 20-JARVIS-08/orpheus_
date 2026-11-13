@@ -4,18 +4,19 @@
 (function () {
   if (window.liveShow) return;
   const MAX = 8;
+  const CO = matchMedia('(pointer:coarse)').matches, PQ = '(max-width:959px),(pointer:coarse) and (max-height:520px)', ph = () => matchMedia(PQ).matches;
   let link_ = '', gconn = null, chatWrap = null, chatLog = null, nick = '', rate = new WeakMap(), peer = null, role = '', conns = [], box = null, body = null, code = '', dst = null, np = {}, st = '', pre = '', err = '', joinTo = 0;
   const aud = new Audio(); aud.autoplay = true;
   const el = (t, css, txt) => { const e = document.createElement(t); if (css) e.style.cssText = css; if (txt != null) e.textContent = txt; return e; };
-  const BTN = 'padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font:600 13px system-ui,sans-serif;cursor:pointer';
-  const INP = 'padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;font:600 14px system-ui,sans-serif;width:100%;box-sizing:border-box';
+  const BTN = 'padding:' + (CO ? '12px 16px' : '8px 14px') + ';border-radius:' + (CO ? '12px' : '8px') + ';border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font:600 ' + (CO ? 14 : 13) + 'px system-ui,sans-serif;cursor:pointer;touch-action:manipulation';
+  const INP = 'padding:' + (CO ? '12px' : '8px 10px') + ';border-radius:' + (CO ? '12px' : '8px') + ';border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;font:600 14px system-ui,sans-serif;width:100%;box-sizing:border-box';
   try { nick = localStorage.getItem('orpheus-nick') || ''; } catch {}
   if (!nick) nick = 'Guest' + (Math.random() * 900 + 100 | 0);
   const addMsg = (n, m, me) => {
     if (!chatLog) return;
     const d = el('div', 'margin:2px 0;word-break:break-word'); d.append(el('b', 'opacity:.75;color:' + (me ? '#8fd3ff' : '#fff'), n + ': '), document.createTextNode(m));
     chatLog.append(d); chatLog.scrollTop = chatLog.scrollHeight;
-    if (box && box.style.display == 'none' && !me && typeof flash == 'function') flash('💬 ' + n + ': ' + m.slice(0, 60));
+    if (!shown && !me && typeof flash == 'function') flash('💬 ' + n + ': ' + m.slice(0, 60));
   };
   const sendChat = m => {
     m = (m || '').trim().slice(0, 300); if (!m) return;
@@ -59,8 +60,8 @@
     else line(2, 'No relay (TURN) set. If direct connections fail, add one under Advanced.');
   }
   const rnd = () => { const a = 'abcdefghjkmnpqrstuvwxyz23456789'; let s = ''; for (let i = 0; i < 6; i++) s += a[Math.random() * a.length | 0]; return s; };
-  const isApp = () => typeof APP !== 'undefined' && !!APP;
-  const link = () => (isApp() ? (cfg.liveSite || '') : location.origin + location.pathname.replace(/index\.html$/, '')) + '?room=' + code;
+  const isApp = () => (typeof APP !== 'undefined' && !!APP) || (typeof NATIVE !== 'undefined' && !!NATIVE);
+  const link = () => { const b = isApp() ? (cfg.liveSite || '') : location.origin + location.pathname.replace(/index\.html$/, ''); return b ? b + '?room=' + code : code.toUpperCase(); };
   const npMsg = () => { const t = typeof tr == 'function' && Q[qi] ? tr(Q[qi]) : null; return { t: 'np', ti: t ? t.ti : '', ar: t ? t.ar : '', n: conns.length }; };
   const bcast = () => { const m = npMsg(); conns.forEach(c => { try { c.send(m); } catch {} }); };
   window.liveNP = () => { if (role == 'host') bcast(); };
@@ -70,7 +71,7 @@
     clearTimeout(joinTo);
     conns.forEach(c => { try { c.close(); } catch {} });
     try { peer && peer.destroy(); } catch {}
-    peer = null; gconn = null; role = ''; if (chatLog) chatLog.textContent = ''; conns = []; np = {}; st = ''; aud.pause(); aud.srcObject = null;
+    peer = null; gconn = null; role = ''; if (chatLog) chatLog.textContent = ''; conns = []; np = {}; st = ''; aud.pause(); aud.srcObject = null; chip();
   }
   function onConn(c) {
     c.on('open', () => {
@@ -117,27 +118,56 @@
     conn.on('close', () => { if (role == 'guest') { stop(); err = 'The host closed the room.'; view(); } });
     view();
   }
+  let bk = null, grab = null, shown = false;
+  const chip = () => {
+    const b = document.getElementById('lvb'); if (!b) return;
+    if (!role) { b.style.display = 'none'; return; }
+    b.style.display = ''; b.textContent = '\u25CF ' + (role == 'host' ? conns.length : 'LIVE');
+    b.title = role == 'host' ? 'Live room: hosting ' + conns.length + ' listener(s). Tap to open.' : 'Live room: listening. Tap to open.';
+  };
+  const layout = () => {
+    if (!box) return; const p = ph();
+    box.style.cssText = p
+      ? 'position:fixed;left:0;right:0;bottom:0;z-index:99998;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;padding:6px 18px calc(18px + env(safe-area-inset-bottom,0px));border-radius:20px 20px 0 0;background:#0b0b0b;color:#fff;font:15px/1.5 system-ui,sans-serif;border-top:1px solid #444;box-shadow:0 -10px 40px rgba(0,0,0,.6)'
+      : 'position:fixed;right:16px;bottom:16px;z-index:99998;width:min(340px,calc(100vw - 32px));padding:14px;border-radius:14px;background:rgba(10,14,20,.95);color:#fff;font:13px/1.5 system-ui,sans-serif;border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    box.style.display = shown ? 'block' : 'none';
+    if (bk) bk.style.display = shown && p ? 'block' : 'none';
+    if (grab) grab.style.display = p ? 'block' : 'none';
+    if (chatLog) chatLog.style.maxHeight = p ? '30vh' : '150px';
+  };
+  /* Android Back closes the sheet first (index.html's popstate handler calls liveHide(1)) */
+  window.liveHide = fromPop => {
+    if (!shown) return;
+    if (!fromPop && ph() && typeof LY !== 'undefined' && LY[LY.length - 1] === 'live') { history.back(); return; }
+    shown = false; layout();
+  };
   function frame() {
-    if (box) { box.style.display = 'block'; return; }
-    box = el('div', 'position:fixed;right:16px;bottom:16px;z-index:99998;width:min(340px,calc(100vw - 32px));padding:14px;border-radius:14px;background:rgba(10,14,20,.95);color:#fff;font:13px/1.5 system-ui,sans-serif;border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 40px rgba(0,0,0,.5)');
-    const h = el('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px');
-    h.append(el('b', 'letter-spacing:.14em;font-size:12px', '● LIVE ROOM'));
-    const x = el('button', BTN + ';padding:2px 9px', '✕'); x.title = 'Hide (the room keeps running)'; x.onclick = () => { box.style.display = 'none'; }; h.append(x);
-    body = el('div'); chatWrap = el('div', 'display:none;margin-top:12px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px');
-    chatLog = el('div', 'max-height:150px;overflow-y:auto;font-size:12.5px;min-height:34px');
-    const ci = el('input', INP + ';font-weight:400;font-size:13px;flex:1'); ci.placeholder = 'Message…'; ci.maxLength = 300;
-    const sb = el('button', BTN + ';padding:7px 12px', 'Send'), go = () => { sendChat(ci.value); ci.value = ''; };
-    sb.onclick = go; ci.onkeydown = e => { if (e.key == 'Enter') { e.stopPropagation(); go(); } e.stopPropagation(); }; ci.onkeyup = ci.onkeypress = e => e.stopPropagation();
-    const ni = el('input', INP + ';font-weight:400;font-size:12px;width:110px'); ni.value = nick; ni.maxLength = 20; ni.title = 'Your name in the chat';
-    ni.onchange = () => { nick = ni.value.trim().slice(0, 20) || nick; try { localStorage.setItem('orpheus-nick', nick); } catch {} }; ni.onkeydown = ni.onkeyup = ni.onkeypress = e => e.stopPropagation();
-    const r1 = el('div', 'display:flex;gap:6px;margin-top:6px'), r2 = el('div', 'display:flex;gap:6px;margin-top:6px;align-items:center');
-    r1.append(ci, sb); r2.append(el('span', 'opacity:.6;font-size:11px', 'Your name:'), ni);
-    chatWrap.append(el('div', 'opacity:.7;font-size:11px;letter-spacing:.1em;margin-bottom:4px', 'CHAT'), chatLog, r1, r2);
-    box.append(h, body, chatWrap, el('div', 'opacity:.35;font-size:10px;margin-top:8px;text-align:right', 'live room v4')); document.body.append(box);
+    if (!box) {
+      bk = el('div', 'position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.62);display:none'); bk.onclick = () => liveHide(); document.body.append(bk);
+      box = el('div');
+      grab = el('div', 'width:40px;height:4px;border-radius:2px;background:#444;margin:6px auto 12px');
+      const h = el('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px');
+      h.append(el('b', 'letter-spacing:.14em;font-size:12px', '\u25CF LIVE ROOM'));
+      const x = el('button', BTN + ';padding:' + (CO ? '8px 16px' : '2px 9px'), '\u2715'); x.title = 'Hide (the room keeps running)'; x.onclick = () => liveHide(); h.append(x);
+      body = el('div'); chatWrap = el('div', 'display:none;margin-top:12px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px');
+      chatLog = el('div', 'overflow-y:auto;font-size:' + (CO ? 14 : 12.5) + 'px;min-height:34px');
+      const ci = el('input', INP + ';font-weight:400;font-size:' + (CO ? 16 : 13) + 'px;flex:1;min-width:0'); ci.placeholder = 'Message\u2026'; ci.maxLength = 300;
+      const sb = el('button', BTN + ';padding:' + (CO ? '12px 18px' : '7px 12px'), 'Send'), go = () => { sendChat(ci.value); ci.value = ''; };
+      sb.onclick = go; ci.onkeydown = e => { if (e.key == 'Enter') { e.stopPropagation(); go(); } e.stopPropagation(); }; ci.onkeyup = ci.onkeypress = e => e.stopPropagation();
+      const ni = el('input', INP + ';font-weight:400;font-size:' + (CO ? 16 : 12) + 'px;width:130px'); ni.value = nick; ni.maxLength = 20; ni.title = 'Your name in the chat';
+      ni.onchange = () => { nick = ni.value.trim().slice(0, 20) || nick; try { localStorage.setItem('orpheus-nick', nick); } catch {} }; ni.onkeydown = ni.onkeyup = ni.onkeypress = e => e.stopPropagation();
+      const r1 = el('div', 'display:flex;gap:6px;margin-top:6px'), r2 = el('div', 'display:flex;gap:6px;margin-top:6px;align-items:center');
+      r1.append(ci, sb); r2.append(el('span', 'opacity:.6;font-size:11px', 'Your name:'), ni);
+      chatWrap.append(el('div', 'opacity:.7;font-size:11px;letter-spacing:.1em;margin-bottom:4px', 'CHAT'), chatLog, r1, r2);
+      box.append(grab, h, body, chatWrap, el('div', 'opacity:.35;font-size:10px;margin-top:8px;text-align:right', 'live room v5')); document.body.append(box);
+      addEventListener('resize', layout);
+    }
+    shown = true; layout();
+    try { if (typeof LY !== 'undefined' && ph() && LY[LY.length - 1] !== 'live') { history.pushState({ l: 'live' }, ''); LY.push('live'); } } catch {}
   }
   function view() {
     if (!box || !body) return;
-    body.textContent = ''; chatWrap.style.display = role ? 'block' : 'none';
+    body.textContent = ''; chatWrap.style.display = role ? 'block' : 'none'; chip();
     const row = (...k) => { const d = el('div', 'display:flex;gap:8px;align-items:center;margin-top:8px'); d.append(...k); return d; };
     if (err) body.append(el('div', 'color:#ff8a8a;margin-bottom:8px', err));
     if (role == 'host') {
@@ -149,9 +179,11 @@
       const l = link(), li = el('input', INP + ';font-weight:400;font-size:12px'); li.readOnly = true; li.value = l; li.onclick = () => li.select();
       const cp = el('button', BTN, 'Copy'); cp.onclick = () => { (navigator.clipboard ? navigator.clipboard.writeText(l) : Promise.reject()).catch(() => { li.select(); document.execCommand('copy'); }); cp.textContent = 'Copied'; setTimeout(() => cp.textContent = 'Copy', 1500); };
       body.append(row(li, cp));
+      if (isApp() && !cfg.liveSite) body.append(el('div', 'opacity:.65;font-size:12px;margin-top:6px', 'Tip: type your website address above so the copied link opens the room directly. Without it, just share the code.'));
+      if (navigator.share) { const sh = el('button', BTN + ';margin-top:8px;width:100%', 'Share\u2026'); sh.onclick = () => navigator.share({ title: 'ORPHEUS live room', text: 'Listen with me on ORPHEUS. Room code: ' + code.toUpperCase() + (l.indexOf('http') == 0 ? '' : ''), url: l.indexOf('http') == 0 ? l : undefined }).catch(() => {}); body.append(sh); }
       body.append(el('div', 'margin-top:10px', 'Listeners: ' + conns.length + ' / ' + MAX));
       const bad = conns.filter(c => c._ice == 'failed' || c._ice == 'disconnected').length; if (bad) body.append(el('div', 'color:#ffd479;font-size:12px', bad + ' listener(s) have a poor/failed connection (their network may block peer-to-peer).'));
-      body.append(el('div', 'opacity:.65;font-size:12px;margin-top:6px', 'Everyone hears what you play, with your EQ and effects. Keep this tab open. Share the link or the code.'));
+      body.append(el('div', 'opacity:.65;font-size:12px;margin-top:6px', 'Everyone hears what you play, with your EQ and effects. ' + (isApp() ? 'Keep the app open. ' : 'Keep this tab open. ') + 'Share the link or the code.'));
       const sb = el('button', BTN + ';margin-top:10px;width:100%', 'Stop room'); sb.onclick = () => { stop(); view(); }; body.append(sb);
     } else if (role == 'guest') {
       body.append(el('div', 'opacity:.7', 'Room ' + code.toUpperCase()));

@@ -16,12 +16,18 @@ def run(*a):
     subprocess.run(list(a), check=True, shell=WIN)
 
 
+# 0) AI vocal removal files (models + onnxruntime-web engine, ~120 MB): downloaded once, then bundled into the APK
+AI_NEEDED = ['models/vocal.onnx', 'models/vocal-fast.onnx', 'vendor/ort/ort.min.js',
+             'vendor/ort/ort-wasm-simd-threaded.jsep.mjs', 'vendor/ort/ort-wasm-simd-threaded.jsep.wasm']
+if not all(os.path.exists(f) for f in AI_NEEDED):
+    run('node', 'setup-ai.js')
+
 # 1) web files -> www/ (no service worker or Windows-only files in the app)
 shutil.rmtree('www', ignore_errors=True)
 os.makedirs('www')
-for f in ('index.html', 'manifest.webmanifest'):
+for f in ('index.html', 'manifest.webmanifest', 'vocal-worklet.js', 'sep-worker.js', 'live.js'):
     shutil.copy(f, 'www')
-for d in ('fonts', 'icons'):
+for d in ('fonts', 'icons', 'lib', 'vendor', 'models'):
     shutil.copytree(d, os.path.join('www', d))
 
 # 2) android project
@@ -50,6 +56,15 @@ add = ''.join('    ' + p + '\n' for p in perms if p.split('"')[1] not in x)
 if add:
     x = x.replace('</manifest>', add + '</manifest>')
     open(mf, 'w', encoding='utf-8').write(x)
+
+# 4b) more memory for Gradle: the AI models make the APK big
+gp = os.path.join('android', 'gradle.properties')
+if os.path.exists(gp):
+    g = open(gp, encoding='utf-8').read()
+    g2 = re.sub(r'org\.gradle\.jvmargs=.*', 'org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8', g)
+    if g2 == g and 'org.gradle.jvmargs' not in g:
+        g2 = g.rstrip('\n') + '\norg.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8\n'
+    open(gp, 'w', encoding='utf-8').write(g2)
 
 # 5) launcher icons (adaptive: maskable icon on its own background colour)
 try:

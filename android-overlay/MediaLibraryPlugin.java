@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.view.WindowManager;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -98,6 +99,24 @@ public class MediaLibraryPlugin extends Plugin {
             Uri.parse("package:" + getContext().getPackageName()));
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getContext().startActivity(i);
+        call.resolve();
+    }
+
+    /** Keeps the screen on while the AI vocal remover is working (Android pauses background work otherwise). */
+    @PluginMethod
+    public void keepAwake(final PluginCall call) {
+        final boolean on = Boolean.TRUE.equals(call.getBoolean("on", false));
+        if (getActivity() == null) {
+            call.resolve();
+            return;
+        }
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (on) getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
+        });
         call.resolve();
     }
 

@@ -1,7 +1,7 @@
 {
   "name": "ORPHEUS",
   "short_name": "ORPHEUS",
-  "description": "ORPHEUS audio player: equalizer, visualizer, playlists.",
+  "description": "ORPHEUS audio player: equalizer, visualizer, synced lyrics, playlists.",
   "id": "./",
   "start_url": "./?source=pwa",
   "scope": "./",
@@ -38,7 +38,6 @@
       "purpose": "maskable"
     }
   ],
-  "prefer_related_applications": false,
   "share_target": {
     "action": "./share-target",
     "method": "POST",
@@ -50,31 +49,15 @@
           "accept": [
             "audio/*",
             ".mp3",
-            ".m4a",
             ".flac",
+            ".m4a",
+            ".wav",
             ".ogg",
             ".opus",
-            ".wav",
             ".aac"
           ]
         }
       ]
     }
-  },
-  "screenshots": [
-    {
-      "src": "screenshots/library.png",
-      "sizes": "618x1372",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Library"
-    },
-    {
-      "src": "screenshots/player.png",
-      "sizes": "618x1372",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Now Playing"
-    }
-  ]
+  }
 }

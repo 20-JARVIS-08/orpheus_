@@ -25,6 +25,7 @@ jobs:
           python-version: '3.12'
       - run: pip install pillow
       - run: npm install --no-save --no-package-lock @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+      - run: node setup-ai.js
       - run: python scripts/android-prepare.py
       - run: ./gradlew assembleDebug
         working-directory: android
