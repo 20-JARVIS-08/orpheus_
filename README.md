@@ -36,3 +36,6 @@ Audio tab → Vocal remover → **Remove vocals** + **AI (best)**. A neural mode
 
 ## Live room (listen together)
 Includes a text chat between everyone in the room. Menu (right-click / ⋯) → **Live room…** → *Host a room* gives a code and a link (`?room=CODE`); others open the link or type the code and hear the host's music live (up to 8 listeners). Peer-to-peer WebRTC via PeerJS (`lib/peerjs.min.js`, `live.js`); the free PeerJS cloud only introduces the browsers. The host streams the app's output (with EQ/effects). In the Windows app, type your website address in the panel so the share link points to your GitHub Pages site.
+
+### Live room: if two devices cannot connect
+Live room → *Advanced / connection problems* → **Test connection** (run it on both devices). It checks (1) the PeerJS connection service, (2) STUN (public address) and (3) an optional TURN relay. If (1) fails, the service is blocked on that network: use a VPN or run your own PeerJS server and enter it under *Own PeerJS server* (host and listeners must use the same one). If (2) fails or the link says "failed", add a TURN relay (URL, user, password) on the host and/or listeners.

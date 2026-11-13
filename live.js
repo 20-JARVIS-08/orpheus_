@@ -4,7 +4,7 @@
 (function () {
   if (window.liveShow) return;
   const MAX = 8;
-  let gconn = null, chatWrap = null, chatLog = null, nick = '', rate = new WeakMap(), peer = null, role = '', conns = [], box = null, body = null, code = '', dst = null, np = {}, st = '', pre = '', err = '', joinTo = 0;
+  let link_ = '', gconn = null, chatWrap = null, chatLog = null, nick = '', rate = new WeakMap(), peer = null, role = '', conns = [], box = null, body = null, code = '', dst = null, np = {}, st = '', pre = '', err = '', joinTo = 0;
   const aud = new Audio(); aud.autoplay = true;
   const el = (t, css, txt) => { const e = document.createElement(t); if (css) e.style.cssText = css; if (txt != null) e.textContent = txt; return e; };
   const BTN = 'padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font:600 13px system-ui,sans-serif;cursor:pointer';
@@ -23,10 +23,41 @@
     if (role == 'host') { addMsg(nick, m, 1); conns.forEach(c => { try { c.send(msg); } catch {} }); }
     else if (role == 'guest' && gconn) { try { gconn.send(msg); } catch {} }
   };
+  const net = () => (typeof cfg != 'undefined' && cfg.liveNet) || {};
+  const ice = () => {
+    const l = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }, { urls: 'stun:stun.cloudflare.com:3478' }], n = net();
+    if (n.turn) l.push({ urls: n.turn.split(/[\s,]+/).filter(Boolean), username: n.user || '', credential: n.pass || '' });
+    return l;
+  };
+  const peerOpts = () => {
+    const n = net(), o = { debug: 0, config: { iceServers: ice() } };
+    if (n.srv) { const m = /^(?:https?:\/\/|wss?:\/\/)?([^:/]+)(?::(\d+))?(\/.*)?$/.exec(n.srv.trim()); if (m) { o.host = m[1]; o.port = +m[2] || 443; o.path = m[3] || '/'; o.secure = !/^(localhost|127\.|192\.168\.|10\.)/.test(m[1]); } }
+    return Object.assign(o, window.PEER_OPTS || {});
+  };
   const mk = id => new Promise((ok, no) => {
-    const p = new Peer(id, Object.assign({ debug: 0, config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] } }, window.PEER_OPTS || {}));
+    const p = new Peer(id, peerOpts());
     p.on('open', () => ok(p)); p.on('error', e => no(e));
   });
+  const NOP2P = 'Found the host, but a direct connection could not be made (your network or firewall blocks peer-to-peer). Open Advanced and add a relay (TURN) server on the host and/or the listener, then use Test connection.';
+  const SIGMSG = 'Could not reach the connection service (PeerJS). It may be blocked on your network or country, or your internet is down. Try a VPN, or set your own server under Advanced.';
+  /* connection test: signalling service + STUN (public address) + relay */
+  async function diag(out) {
+    const line = (ok, t) => { const d = el('div', 'margin:3px 0;color:' + (ok === 1 ? '#8fe3a0' : ok === 0 ? '#ff8a8a' : '#ffd479'), (ok === 1 ? '✓ ' : ok === 0 ? '✗ ' : '• ') + t); out.append(d); };
+    out.textContent = ''; line(2, 'Testing…');
+    let p = null; try { p = await Promise.race([mk(), new Promise((_, no) => setTimeout(() => no({ type: 'timeout' }), 10000))]); out.textContent = ''; line(1, 'Connection service reachable'); } catch (e) { out.textContent = ''; line(0, 'Connection service NOT reachable (' + (e.type || e.message || 'error') + ')'); }
+    try { p && p.destroy(); } catch {}
+    const types = new Set();
+    try {
+      const pc = new RTCPeerConnection({ iceServers: ice() }); pc.createDataChannel('t');
+      pc.onicecandidate = e => { if (e.candidate) { const m = / typ (\w+)/.exec(e.candidate.candidate); if (m) types.add(m[1]); } };
+      await pc.setLocalDescription(await pc.createOffer());
+      await new Promise(r => { const t = setTimeout(r, 6000); pc.onicegatheringstatechange = () => { if (pc.iceGatheringState == 'complete') { clearTimeout(t); r(); } }; });
+      pc.close();
+    } catch {}
+    line(types.has('srflx') ? 1 : 0, types.has('srflx') ? 'Public address found (direct connections possible)' : 'No answer from STUN servers (they may be blocked): direct connections between different networks will probably fail');
+    if (net().turn) line(types.has('relay') ? 1 : 0, types.has('relay') ? 'Relay (TURN) works' : 'Relay (TURN) did not respond: check URL, user and password');
+    else line(2, 'No relay (TURN) set. If direct connections fail, add one under Advanced.');
+  }
   const rnd = () => { const a = 'abcdefghjkmnpqrstuvwxyz23456789'; let s = ''; for (let i = 0; i < 6; i++) s += a[Math.random() * a.length | 0]; return s; };
   const isApp = () => typeof APP !== 'undefined' && !!APP;
   const link = () => (isApp() ? (cfg.liveSite || '') : location.origin + location.pathname.replace(/index\.html$/, '')) + '?room=' + code;
@@ -45,6 +76,7 @@
     c.on('open', () => {
       if (conns.length >= MAX) { try { c.send({ t: 'full' }); } catch {} setTimeout(() => c.close(), 400); return; }
       c._call = peer.call(c.peer, dst.stream); conns.push(c); c.send(npMsg()); bcast(); view();
+      try { c._call.on('iceStateChanged', s => { c._ice = s; view(); }); } catch {}
     });
     c.on('close', () => { conns = conns.filter(x => x !== c); try { c._call && c._call.close(); } catch {} bcast(); view(); });
     c.on('data', d => {
@@ -66,20 +98,20 @@
       peer.on('connection', onConn);
       peer.on('disconnected', () => { try { peer.reconnect(); } catch {} });
       peer.on('error', e => { if (typeof flash == 'function') flash('LIVE ROOM: ' + e.type); });
-    } catch (e) { stop(); err = 'Could not start the room (' + (e.type || e.message || e) + '). Check your internet connection.'; }
+    } catch (e) { stop(); err = (e && /network|server|socket|timeout/.test(e.type || '') ? SIGMSG : 'Could not start the room.') + ' (' + (e.type || e.message || e) + ')'; }
     view();
   }
   async function join(c) {
     c = (c || '').trim().toLowerCase();
     if (!/^[a-z0-9]{4,12}$/.test(c)) { err = 'Enter the room code (6 letters/numbers).'; return view(); }
-    err = ''; st = 'Connecting…'; view();
-    try { peer = await mk(); } catch (e) { stop(); err = 'Could not reach the connection service (' + (e.type || e.message || e) + ').'; return view(); }
+    err = ''; link_ = ''; st = 'Connecting…'; view();
+    try { peer = await mk(); } catch (e) { stop(); err = SIGMSG + ' (' + (e.type || e.message || e) + ')'; return view(); }
     role = 'guest'; code = c;
     try { E.forEach(e => e.pause()); } catch {}
-    peer.on('call', call => { call.answer(); call.on('stream', s => { clearTimeout(joinTo); aud.srcObject = s; aud.play().catch(() => {}); st = 'listening'; view(); }); });
+    peer.on('call', call => { call.answer(); try { call.on('iceStateChanged', s => { link_ = s; if (s == 'failed' && st != 'listening') { stop(); err = NOP2P; view(); } else view(); }); } catch {} call.on('stream', s => { clearTimeout(joinTo); aud.srcObject = s; aud.play().catch(() => {}); st = 'listening'; view(); }); });
     peer.on('error', e => { if (e.type == 'peer-unavailable') { stop(); err = 'Room not found. Check the code, or the host may be offline.'; view(); } });
     const conn = gconn = peer.connect('orpheus-' + c, { reliable: true });
-    joinTo = setTimeout(() => { if (st != 'listening') { stop(); err = 'Could not connect to the room (host offline, or a firewall is blocking direct connections).'; view(); } }, 20000);
+    joinTo = setTimeout(() => { if (st != 'listening') { stop(); err = link_ ? NOP2P : 'The host did not answer. Check that the host still has the room open (and the same connection server), then try again.'; view(); } }, 20000);
     conn.on('data', d => { if (d && d.t == 'chat' && typeof d.m == 'string') addMsg(String(d.n || '').slice(0, 20), d.m.slice(0, 300), d.n === nick); if (d.t == 'np') { np = d; view(); } if (d.t == 'full') { stop(); err = 'This room is full (max ' + MAX + ' listeners).'; view(); } });
     conn.on('close', () => { if (role == 'guest') { stop(); err = 'The host closed the room.'; view(); } });
     view();
@@ -117,11 +149,12 @@
       const cp = el('button', BTN, 'Copy'); cp.onclick = () => { (navigator.clipboard ? navigator.clipboard.writeText(l) : Promise.reject()).catch(() => { li.select(); document.execCommand('copy'); }); cp.textContent = 'Copied'; setTimeout(() => cp.textContent = 'Copy', 1500); };
       body.append(row(li, cp));
       body.append(el('div', 'margin-top:10px', 'Listeners: ' + conns.length + ' / ' + MAX));
+      const bad = conns.filter(c => c._ice == 'failed' || c._ice == 'disconnected').length; if (bad) body.append(el('div', 'color:#ffd479;font-size:12px', bad + ' listener(s) have a poor/failed connection (their network may block peer-to-peer).'));
       body.append(el('div', 'opacity:.65;font-size:12px;margin-top:6px', 'Everyone hears what you play, with your EQ and effects. Keep this tab open. Share the link or the code.'));
       const sb = el('button', BTN + ';margin-top:10px;width:100%', 'Stop room'); sb.onclick = () => { stop(); view(); }; body.append(sb);
     } else if (role == 'guest') {
       body.append(el('div', 'opacity:.7', 'Room ' + code.toUpperCase()));
-      body.append(el('div', 'font-weight:700;margin-top:4px', st == 'listening' ? '🎧 Listening live' : 'Connecting…'));
+      body.append(el('div', 'font-weight:700;margin-top:4px', st == 'listening' ? '🎧 Listening live' : 'Connecting…' + (link_ ? ' (' + link_ + ')' : ' (looking for the host)')));
       if (np.ti) body.append(el('div', 'margin-top:8px;font-size:15px;font-weight:700', np.ti), el('div', 'opacity:.7', np.ar || ''));
       if (np.n != null) body.append(el('div', 'opacity:.65;font-size:12px;margin-top:6px', np.n + ' listening'));
       const v = el('input', 'width:100%;margin-top:10px'); v.type = 'range'; v.min = 0; v.max = 1; v.step = .01; v.value = aud.volume; v.oninput = () => { aud.volume = +v.value; };
@@ -135,6 +168,12 @@
       const jb = el('button', BTN, 'Join'); jb.onclick = () => join(ci.value); ci.onkeydown = e => { if (e.key == 'Enter') join(ci.value); };
       body.append(row(ci, jb));
       body.append(el('div', 'opacity:.55;font-size:11px;margin-top:10px', 'Peer-to-peer. Works best with up to ' + MAX + ' listeners.'));
+      const ad = el('details', 'margin-top:8px;font-size:12px'), sm = el('summary', 'cursor:pointer;opacity:.8', 'Advanced / connection problems'); ad.append(sm);
+      const fld = (ph, k) => { const i = el('input', INP + ';font-weight:400;font-size:12px;margin-top:6px'); i.placeholder = ph; i.value = net()[k] || ''; i.onchange = () => { cfg.liveNet = Object.assign({}, cfg.liveNet || {}, { [k]: i.value.trim() }); sv(); }; i.onkeydown = i.onkeyup = i.onkeypress = e => e.stopPropagation(); return i; };
+      const res = el('div', 'margin-top:8px'), tb = el('button', BTN + ';margin-top:8px;width:100%', 'Test connection'); tb.onclick = () => diag(res);
+      ad.append(fld('Own PeerJS server (optional), e.g. my.server.com:443', 'srv'), fld('TURN relay URL (optional), e.g. turn:host:3478', 'turn'), fld('TURN username', 'user'), fld('TURN password', 'pass'), tb, res,
+        el('div', 'opacity:.6;margin-top:6px', 'Host and listeners must use the same connection server. A TURN relay helps when networks block direct connections.'));
+      body.append(ad);
     }
   }
   window.liveShow = c => { frame(); if (c) pre = String(c).slice(0, 12); view(); };
