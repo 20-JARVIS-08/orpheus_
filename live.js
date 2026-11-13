@@ -38,7 +38,7 @@
     const p = new Peer(id, peerOpts());
     p.on('open', () => ok(p)); p.on('error', e => no(e));
   });
-  const NOP2P = 'Found the host, but a direct connection could not be made (your network or firewall blocks peer-to-peer). Open Advanced and add a relay (TURN) server on the host and/or the listener, then use Test connection.';
+  const NOP2P = 'The host is online, but a direct connection could not be made: one of the two networks (mobile data / strict router or firewall) blocks peer-to-peer. Open Advanced \u2192 "Use free public relay" on BOTH devices (or enter your own TURN), press Test connection, then try again.';
   const SIGMSG = 'Could not reach the connection service (PeerJS). It may be blocked on your network or country, or your internet is down. Try a VPN, or set your own server under Advanced.';
   /* connection test: signalling service + STUN (public address) + relay */
   async function diag(out) {
@@ -111,7 +111,8 @@
     peer.on('call', call => { call.answer(); try { call.on('iceStateChanged', s => { link_ = s; if (s == 'failed' && st != 'listening') { stop(); err = NOP2P; view(); } else view(); }); } catch {} call.on('stream', s => { clearTimeout(joinTo); aud.srcObject = s; aud.play().catch(() => {}); st = 'listening'; view(); }); });
     peer.on('error', e => { if (e.type == 'peer-unavailable') { stop(); err = 'Room not found. Check the code, or the host may be offline.'; view(); } });
     const conn = gconn = peer.connect('orpheus-' + c, { reliable: true });
-    joinTo = setTimeout(() => { if (st != 'listening') { stop(); err = link_ ? NOP2P : 'The host did not answer. Check that the host still has the room open (and the same connection server), then try again.'; view(); } }, 20000);
+    try { conn.on('iceStateChanged', x => { link_ = x; if (x == 'failed' && st != 'listening') { stop(); err = NOP2P; } view(); }); } catch {}
+    joinTo = setTimeout(() => { if (st != 'listening') { stop(); err = NOP2P + (link_ ? '' : ' (The host IS online, but no direct link could be started.)'); view(); } }, 20000);
     conn.on('data', d => { if (d && d.t == 'chat' && typeof d.m == 'string') addMsg(String(d.n || '').slice(0, 20), d.m.slice(0, 300), d.n === nick); if (d.t == 'np') { np = d; view(); } if (d.t == 'full') { stop(); err = 'This room is full (max ' + MAX + ' listeners).'; view(); } });
     conn.on('close', () => { if (role == 'guest') { stop(); err = 'The host closed the room.'; view(); } });
     view();
@@ -132,7 +133,7 @@
     const r1 = el('div', 'display:flex;gap:6px;margin-top:6px'), r2 = el('div', 'display:flex;gap:6px;margin-top:6px;align-items:center');
     r1.append(ci, sb); r2.append(el('span', 'opacity:.6;font-size:11px', 'Your name:'), ni);
     chatWrap.append(el('div', 'opacity:.7;font-size:11px;letter-spacing:.1em;margin-bottom:4px', 'CHAT'), chatLog, r1, r2);
-    box.append(h, body, chatWrap); document.body.append(box);
+    box.append(h, body, chatWrap, el('div', 'opacity:.35;font-size:10px;margin-top:8px;text-align:right', 'live room v4')); document.body.append(box);
   }
   function view() {
     if (!box || !body) return;
@@ -171,7 +172,9 @@
       const ad = el('details', 'margin-top:8px;font-size:12px'), sm = el('summary', 'cursor:pointer;opacity:.8', 'Advanced / connection problems'); ad.append(sm);
       const fld = (ph, k) => { const i = el('input', INP + ';font-weight:400;font-size:12px;margin-top:6px'); i.placeholder = ph; i.value = net()[k] || ''; i.onchange = () => { cfg.liveNet = Object.assign({}, cfg.liveNet || {}, { [k]: i.value.trim() }); sv(); }; i.onkeydown = i.onkeyup = i.onkeypress = e => e.stopPropagation(); return i; };
       const res = el('div', 'margin-top:8px'), tb = el('button', BTN + ';margin-top:8px;width:100%', 'Test connection'); tb.onclick = () => diag(res);
-      ad.append(fld('Own PeerJS server (optional), e.g. my.server.com:443', 'srv'), fld('TURN relay URL (optional), e.g. turn:host:3478', 'turn'), fld('TURN username', 'user'), fld('TURN password', 'pass'), tb, res,
+      const pre2 = el('button', BTN + ';margin-top:8px;width:100%', 'Use free public relay (shared, may be slow)');
+      pre2.onclick = () => { cfg.liveNet = Object.assign({}, cfg.liveNet || {}, { turn: 'turn:openrelay.metered.ca:80, turn:openrelay.metered.ca:443, turns:openrelay.metered.ca:443?transport=tcp', user: 'openrelayproject', pass: 'openrelayproject' }); sv(); view(); const d = body.querySelector('details'); if (d) d.open = true; };
+      ad.append(pre2, fld('Own PeerJS server (optional), e.g. my.server.com:443', 'srv'), fld('TURN relay URL (optional), e.g. turn:host:3478', 'turn'), fld('TURN username', 'user'), fld('TURN password', 'pass'), tb, res,
         el('div', 'opacity:.6;margin-top:6px', 'Host and listeners must use the same connection server. A TURN relay helps when networks block direct connections.'));
       body.append(ad);
     }
