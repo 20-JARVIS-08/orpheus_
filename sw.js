@@ -1,10 +1,14 @@
 /* ORPHEUS service worker: makes the web version installable and usable offline.
    Bump VERSION whenever you upload a new index.html so visitors get the update. */
-const VERSION = 'orpheus-v6';
+const VERSION = 'orpheus-v8';
 const SHELL = [
   './',
   'index.html',
   'vocal-worklet.js',
+  'sep-worker.js',
+  'live.js',
+  'lib/peerjs.min.js',
+  'vendor/ort/ort.min.js',
   'manifest.webmanifest',
   'fonts/fonts.css',
   'fonts/orbitron-latin-500-normal.woff2',
@@ -18,6 +22,14 @@ const SHELL = [
   'icons/apple-touch-icon.png',
   'icons/favicon-32.png',
 ];
+
+/* cross-origin isolation (lets the AI vocal engine use several CPU threads); everything served here is same-origin, so nothing breaks */
+const iso = (r) => {
+  if (!r || r.type === 'opaque' || r.status < 200 || r.status > 299 || r.status === 204) return r;
+  const h = new Headers(r.headers);
+  h.set('Cross-Origin-Opener-Policy', 'same-origin'); h.set('Cross-Origin-Embedder-Policy', 'require-corp'); h.set('Cross-Origin-Resource-Policy', 'same-origin');
+  return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
+};
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -37,6 +49,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET' || url.origin !== location.origin) return;
   if (req.headers.has('range')) return; // never touch media streaming
   if (url.pathname.includes('/downloads/')) return; // installers always come straight from the server
+  if (url.pathname.includes('/models/')) return; // the 65 MB AI model is cached by sep-worker.js itself
 
   // pages: try the network first so updates arrive, fall back to the cached copy when offline
   if (req.mode === 'navigate') {
@@ -45,9 +58,9 @@ self.addEventListener('fetch', (e) => {
         .then((res) => {
           const copy = res.clone();
           caches.open(VERSION).then((c) => c.put('index.html', copy));
-          return res;
+          return iso(res);
         })
-        .catch(() => caches.match('index.html').then((r) => r || caches.match('./')))
+        .catch(() => caches.match('index.html').then((r) => iso(r || null) || caches.match('./').then(iso)))
     );
     return;
   }
@@ -58,10 +71,10 @@ self.addEventListener('fetch', (e) => {
       const net = fetch(req)
         .then((res) => {
           if (res && res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
-          return res;
+          return iso(res);
         })
-        .catch(() => hit);
-      return hit || net;
+        .catch(() => iso(hit));
+      return hit ? iso(hit) : net;
     })
   );
 });

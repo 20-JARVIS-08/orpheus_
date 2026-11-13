@@ -21,8 +21,9 @@ jobs:
       - name: Collect website files
         run: |
           mkdir _site
-          cp index.html vocal-worklet.js manifest.webmanifest sw.js _site/
-          cp -r fonts icons _site/
+          node setup-ai.js
+          cp index.html vocal-worklet.js sep-worker.js live.js manifest.webmanifest sw.js _site/
+          cp -r fonts icons lib vendor models _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

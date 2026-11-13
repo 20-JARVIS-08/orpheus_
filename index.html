@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self' blob:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self' blob: https://0.peerjs.com wss://0.peerjs.com">
 <title>ORPHEUS</title>
 <meta name="description" content="ORPHEUS audio player: equalizer, visualizer, synced lyrics, playlists. Runs in the browser, installable, and available as a Windows app.">
 <meta name="theme-color" content="#000000">
@@ -209,8 +209,8 @@ const coarse=matchMedia('(pointer:coarse)').matches;
 let st={};try{st=JSON.parse(localStorage.getItem('orpheus')||'{}')}catch{}
 const F=[31,62,125,250,500,1000,2000,4000,8000,16000];
 const PR={Flat:[0,0,0,0,0,0,0,0,0,0],Rock:[4,3,2,0,-1,-1,1,3,4,4],Jazz:[3,2,1,2,-2,-2,0,1,2,3],Pop:[-1,1,3,4,3,0,-1,-1,1,2],Classical:[4,3,2,1,-1,-1,0,2,3,4]};
-const D={a:'#e6e6e6',vc:'#e6e6e6',sp:1,r:'12px',rv:1,xf:0,eq:Array(10).fill(0),bass:0,tre:0,voc:0,sur:0,rev:0,mono:0,vr:0,vrk:1,vrw:.6,vrc:0,bal:0,norm:0,vol:.8,rate:1,sh:0,rp:0,amb:1,prof:{},keys:{play:' ',next:'ArrowRight',prev:'ArrowLeft',mute:'m',fav:'f',focus:'z',vocal:'v'}};
-const cfg={...D,...st.cfg};cfg.keys={...D.keys,...cfg.keys};
+const D={a:'#e6e6e6',vc:'#e6e6e6',sp:1,r:'12px',rv:1,xf:0,eq:Array(10).fill(0),bass:0,tre:0,voc:0,sur:0,rev:0,mono:0,vr:0,ai:1,aif:1,ail:0,vrk:1,vrw:.6,vrc:0,bal:0,norm:0,vol:.8,rate:1,sh:0,rp:0,amb:1,prof:{},keys:{play:' ',next:'ArrowRight',prev:'ArrowLeft',mute:'m',fav:'f',focus:'z',vocal:'v'}};
+const cfg={...D,...st.cfg};cfg.keys={...D.keys,...cfg.keys};const MODK=['Alt','AltGraph','Control','Shift','Meta','CapsLock','ContextMenu','OS'];for(const k in D.keys)if(MODK.includes(cfg.keys[k]))cfg.keys[k]=D.keys[k];
 /* one-time migration: visitors with an old saved 2px (sharp) default get the new round default; their later choices are kept */
 if(st.cfg&&st.cfg.rv!==1)cfg.r=D.r;cfg.rv=1;
 let fav=new Set(st.fav||[]),pl=st.pl||{},hist=st.hist||[],plSel='',T=[],Q=[],qi=-1,tab='lib',rtab='aud',cur=0,U=[],pkv=[],pkId=0,lines=[],li=-1,xfing=0,slEnd=0,slT,listen=null,muted=0,artU='',bgU='',lq='',impTxt='',fsState=true;
@@ -254,6 +254,35 @@ vrCut.Q.value=.6;vrOut.connect(vrCut);vrCut.connect(mono);vrIn.connect(vrW);
 /* smart mode: spectral processor in vocal-worklet.js; until it loads (or if it can't), the classic L-R path above is used */
 let wk=null;
 try{AC.audioWorklet.addModule('vocal-worklet.js').then(()=>{wk=new AudioWorkletNode(AC,'orpheus-vocal',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:'explicit'});vrW.connect(wk);wk.connect(vrOut);ap();if(typeof rr=='function')rr()}).catch(()=>{})}catch{}
+/* AI vocal removal: sep-worker.js turns a song into an instrumental WAV once; it is cached and then played instead of the original */
+const K=[0,0],ins=new Map(),insU=new Map(),insAuto=new Set();let aiBad=0,aiLastVr=0,aiPill=null,aiT0=0,insQ=[],insBusy=0,insId='',aiTxt='',aiW=null,aiRej=null,aiEp='';
+function aiUi(t,err){aiTxt=err?'':t;if(!aiPill){aiPill=document.createElement('div');aiPill.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99999;max-width:min(92vw,560px);padding:10px 16px;border-radius:10px;background:rgba(10,14,20,.92);color:#fff;font:600 13px/1.5 system-ui,sans-serif;border:1px solid rgba(255,255,255,.25);cursor:pointer;display:none;text-align:center;white-space:pre-line';aiPill.title='click to hide';aiPill.onclick=()=>aiPill.style.display='none';document.body.append(aiPill)}
+aiPill.style.borderColor=err?'#ff5c5c':'rgba(255,255,255,.25)';aiPill.textContent=t;aiPill.style.display=t?'block':'none'}
+const insUrl=id=>{let u=insU.get(id);if(!u){u=URL.createObjectURL(ins.get(id));insU.set(id,u)}return u};
+function wav16(L,R){const n=L.length,b=new ArrayBuffer(44+n*4),v=new DataView(b),w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+w(0,'RIFF');v.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,2,true);v.setUint32(24,44100,true);v.setUint32(28,176400,true);v.setUint16(32,4,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*4,true);
+const o=new Int16Array(b,44),c=x=>x<-1?-32768:x>1?32767:x*32767|0;for(let i=0;i<n;i++){o[2*i]=c(L[i]);o[2*i+1]=c(R[i])}return new Blob([b],{type:'audio/wav'})}
+function syncSrc(){const id=Q[qi],t=id&&tr(id);if(!t)return;const n=cur,e=E[n],want=cfg.vr&&cfg.ai&&ins.has(id)?1:0;if(want===K[n])return;K[n]=want;
+const t0=e.currentTime,pl=!e.paused;e.src=want?insUrl(id):(U[n]||t.url);e.playbackRate=cfg.rate;e.addEventListener('loadedmetadata',()=>{try{e.currentTime=t0}catch{}if(pl)playE(e)},{once:true})}
+function aiAdd(id,front,auto){if(!auto)aiBad=0;if(aiBad&&auto)return;if(ins.has(id)||id===insId||!tr(id))return;if(auto)insAuto.add(id);else insAuto.delete(id);const i=insQ.indexOf(id);if(i>=0){if(front&&i>0){insQ.splice(i,1);insQ.unshift(id)}}else if(front)insQ.unshift(id);else insQ.push(id);aiRun()}
+function aiPlan(){if(cfg.vr!==aiLastVr){aiLastVr=cfg.vr;if(cfg.vr)aiBad=0}if(!(cfg.vr&&cfg.ai)||aiBad||qi<0||!Q.length)return;const c=Q[qi],nx=Q[(qi+1)%Q.length];
+if(insBusy&&insId&&insId!==c&&insId!==nx&&insAuto.has(insId)&&aiRej){aiW&&aiW.terminate();aiW=null;aiRej(new Error('cancel'))}
+if(nx&&nx!==c)aiAdd(nx,0,1);aiAdd(c,1,1)}
+function aiDel(id){const u=insU.get(id);if(u)URL.revokeObjectURL(u);insU.delete(id);ins.delete(id);tx('readwrite',s=>s.delete('\u0001in'+id));if(Q[qi]===id){K[cur]=1;syncSrc()}}
+async function aiRun(){if(insBusy)return;insBusy=1;try{
+if(location.protocol=='file:'){aiBad=1;insQ=[];aiUi('AI vocal removal cannot run from a local file (file://). Use the Windows app, or put the site on a web host / local web server. The live filter is used instead.',1);return}
+try{for(const f of['models/'+(cfg.aif?'vocal-fast.onnx':'vocal.onnx'),'sep-worker.js','vendor/ort/ort.min.js']){const r=await fetch(f,{method:'HEAD',cache:'no-store'});if(!r.ok)throw f}}
+catch(f){aiBad=1;insQ=[];aiUi('AI files are missing on this site ('+f+'). Upload sep-worker.js and the models/ and vendor/ folders next to index.html (run: node setup-ai.js). The live filter is used instead.',1);return}
+while(insQ.length){const id=insQ.shift();if(ins.has(id)||!tr(id))continue;insId=id;
+try{await aiMake(id)}catch(e){if(e&&e.message=='cancel')continue;aiBad=1;aiUi('AI vocal removal failed: '+(e&&e.message||e)+'. The live filter is used instead.',1);insQ=[];break}finally{insId=''}}}
+finally{insBusy=0;aiTxt='';if(!aiBad&&aiPill&&!/ready/.test(aiPill.textContent))aiUi('');if(aiW){aiW.terminate();aiW=null}}}
+async function aiMake(id){const t=tr(id);aiT0=Date.now();aiUi('AI vocal removal: preparing “'+t.ti+'”…');
+const ab=t.blob?await t.blob.arrayBuffer():await(await fetch(t.url)).arrayBuffer();
+const buf=await new OfflineAudioContext(2,1,44100).decodeAudioData(ab),L=buf.getChannelData(0).slice(),R=(buf.numberOfChannels>1?buf.getChannelData(1):buf.getChannelData(0)).slice();
+const out=await new Promise((ok,no)=>{aiRej=no;if(!aiW)aiW=new Worker('sep-worker.js');const w=aiW;
+w.onmessage=e=>{const d=e.data;if(d.type=='progress'){const el=(Date.now()-aiT0)/1000,left=el/d.p*(1-d.p);aiUi('AI vocal removal '+Math.round(d.p*100)+'%'+(d.p<1?' · about '+(left>90?Math.round(left/60)+' min':Math.round(left)+' s')+' left':'')+(aiEp?' · '+aiEp:'')+(insQ.length?' · +'+insQ.length+' queued':'')+'\n“'+t.ti+'” keeps playing with the live filter until it is ready')}else if(d.type=='info')aiEp=d.ep=='webgpu'?'GPU':'CPU';else if(d.type=='done')ok(d);else if(d.type=='error')no(new Error(d.msg))};
+w.onerror=()=>no(new Error('could not start (model or engine files missing?)'));w.postMessage({type:'run',L,R,kind:cfg.aif?'fast':'best',low:!!cfg.ail},[L.buffer,R.buffer])});
+aiRej=null;const blob=wav16(out.L,out.R);ins.set(id,blob);tx('readwrite',s=>s.put({id:'\u0001in'+id,blob}));aiUi('Instrumental ready ✓ '+t.ti);setTimeout(()=>{if(aiPill&&/ready/.test(aiPill.textContent))aiUi('')},4000);ap()}
 let vrOn=-1;
 const vrRoute=on=>{if(on===vrOn)return;vrOn=on;try{n0.disconnect(mono)}catch{}try{n0.disconnect(vrIn)}catch{}
 if(on)n0.connect(vrIn);else n0.connect(mono)};
@@ -265,7 +294,7 @@ mg.connect(sg);sg.connect(mix);
 const pan=AC.createStereoPanner(),comp=AC.createDynamicsCompressor(),master=AC.createGain(),an=AC.createAnalyser();an.fftSize=256;
 mix.connect(pan);pan.connect(comp);comp.connect(master);master.connect(an);an.connect(AC.destination);
 const fd=new Uint8Array(128);
-function ap(){vrRoute(cfg.vr?1:0);{const t=AC.currentTime;vrKg.gain.setTargetAtTime(cfg.vr?cfg.vrk:0,t,.03);vrHd.gain.setTargetAtTime(cfg.vr?1-cfg.vrk:1,t,.03);vrCl.gain.value=wk?0:1;vrW.gain.value=wk?1:0;vrCut.gain.setTargetAtTime(cfg.vr?-cfg.vrc:0,t,.05);if(wk){wk.parameters.get('k').value=cfg.vrk;wk.parameters.get('t').value=.9-.5*cfg.vrw}}eq.forEach((n,i)=>n.gain.value=cfg.eq[i]);bass.gain.value=cfg.bass;tre.gain.value=cfg.tre;voc.gain.value=cfg.voc;sg.gain.value=cfg.sur;rv.gain.value=cfg.rev;mono.channelCount=cfg.mono?1:2;pan.pan.value=cfg.bal;comp.threshold.value=cfg.norm?-26:0;comp.ratio.value=cfg.norm?5:1;master.gain.value=muted?0:cfg.vol;E.forEach(e=>e.playbackRate=cfg.rate);$('#vol').value=cfg.vol}
+function ap(){try{syncSrc();aiPlan()}catch{}vrRoute(cfg.vr&&!K[cur]?1:0);{const t=AC.currentTime;vrKg.gain.setTargetAtTime(cfg.vr?cfg.vrk:0,t,.03);vrHd.gain.setTargetAtTime(cfg.vr?1-cfg.vrk:1,t,.03);vrCl.gain.value=wk?0:1;vrW.gain.value=wk?1:0;vrCut.gain.setTargetAtTime(cfg.vr?-cfg.vrc:0,t,.05);if(wk){wk.parameters.get('k').value=cfg.vrk;wk.parameters.get('t').value=.9-.5*cfg.vrw}}eq.forEach((n,i)=>n.gain.value=cfg.eq[i]);bass.gain.value=cfg.bass;tre.gain.value=cfg.tre;voc.gain.value=cfg.voc;sg.gain.value=cfg.sur;rv.gain.value=cfg.rev;mono.channelCount=cfg.mono?1:2;pan.pan.value=cfg.bal;comp.threshold.value=cfg.norm?-26:0;comp.ratio.value=cfg.norm?5:1;master.gain.value=muted?0:cfg.vol;E.forEach(e=>e.playbackRate=cfg.rate);$('#vol').value=cfg.vol}
 function th(){const s=document.documentElement.style;s.setProperty('--a',cfg.a);s.setProperty('--vc',cfg.vc);s.setProperty('--sp',cfg.sp);s.setProperty('--r',cfg.r);document.body.classList.toggle('noamb',!cfg.amb)}
 /* ID3v2.3/2.4 tags: title, artist, cover */
 const txt=d=>{const e=d[0],b=d.slice(1);return new TextDecoder(e==1?'utf-16le':e==2?'utf-16be':e==3?'utf-8':'windows-1252').decode(b).replace(/[\0﻿]/g,'').trim()};
@@ -297,15 +326,15 @@ function showArt(t){if(artU)URL.revokeObjectURL(artU);artU=t.art?URL.createObjec
 const setTi=()=>{const t=tr(Q[qi]);$('#ti').textContent=t?(fav.has(t.id)?'♥ ':'')+t.ti:'STANDBY'};
 async function load(i,fade,go=true){const t=tr(Q[i]);if(!t)return;AC.resume();
 const o=cur,n=fade?1-cur:cur,e=E[n],now=AC.currentTime,d=fade?Math.max(cfg.xf,.1):.03;
-if(U[n])URL.revokeObjectURL(U[n]);U[n]=t.blob?URL.createObjectURL(t.blob):null;e.src=U[n]||t.url;e.playbackRate=cfg.rate;
+if(U[n])URL.revokeObjectURL(U[n]);U[n]=t.blob?URL.createObjectURL(t.blob):null;K[n]=cfg.vr&&cfg.ai&&ins.has(t.id)?1:0;e.src=K[n]?insUrl(t.id):(U[n]||t.url);e.playbackRate=cfg.rate;
 G[n].gain.cancelScheduledValues(now);G[n].gain.setValueAtTime(0,now);G[n].gain.linearRampToValueAtTime(1,now+d);
 if(fade){G[o].gain.cancelScheduledValues(now);G[o].gain.setValueAtTime(1,now);G[o].gain.linearRampToValueAtTime(0,now+d);const oe=E[o];setTimeout(()=>{if(oe!==E[cur])oe.pause()},d*1000+80)}else E[1-n].pause();
-cur=n;qi=i;xfing=0;if(go)playE(e);
+cur=n;qi=i;xfing=0;if(go)playE(e);ap();
 setTi();$('#ar').textContent=t.ar;document.title=t.ti+' · ORPHEUS';showArt(t);
 try{if(navigator.mediaSession)navigator.mediaSession.metadata=new MediaMetadata({title:t.ti,artist:t.ar,artwork:artU?[{src:artU}]:[]})}catch{}
 lyr(t);
 if(go){hist.unshift({id:t.id,ts:Date.now()});hist.length=Math.min(hist.length,500)}
-pkv=[];pkId++;const my=t.id;wave(t).then(p=>{if(Q[qi]==my){pkv=p;pkId++}});sv();mark()}
+if(window.liveNP)liveNP();pkv=[];pkId++;const my=t.id;wave(t).then(p=>{if(Q[qi]==my){pkv=p;pkId++}});sv();mark()}
 /* lyrics: inline text (browser mode) or a .lrc file next to the song (read from disk; UTF-8 or Windows-1256 for Persian) */
 async function lyr(t){let s=t.lrc;lines=[];li=-1;const L=$('#ly');L.textContent='';
 if(s==null&&t.lrcPath){try{const b=await(await fetch(mU(t.lrcPath))).arrayBuffer();try{s=new TextDecoder('utf-8',{fatal:true}).decode(b)}catch{s=new TextDecoder('windows-1256').decode(b)}t.lrc=s}catch{s=''}}
@@ -380,13 +409,13 @@ const lp=(pr*100).toFixed(2)+'%';if(eMk._l!==lp){eMk._l=lp;eMk.style.left=lp}
 tt(eTm,fm(e.currentTime)+' / '+fm(e.duration));tt(ePP,e.paused?'▶':'⏸');
 if(lines.length){let k=-1;for(let i=0;i<lines.length;i++)if(lines[i][0]<=e.currentTime)k=i;if(k!=li){li=k;const d=eLy.children;for(let i=0;i<d.length;i++)d[i].classList.toggle('on',i==k);if(k>=0)eLy.scrollTo({top:d[k].offsetTop-eLy.clientHeight/2,behavior:'smooth'})}}
 const fl=(cfg.sh?' · SHUF':'')+['',' · REP',' · REP1'][cfg.rp]+(muted?' · MUTE':'');
-tt(eSt,msg||impTxt||(slEnd?'SLEEP T-'+fm((slEnd-Date.now())/1000):(e.paused?'STANDBY':'SIGNAL ACTIVE')+' · '+T.length+' TRACKS'+fl))}
+tt(eSt,msg||impTxt||aiTxt||(slEnd?'SLEEP T-'+fm((slEnd-Date.now())/1000):(e.paused?'STANDBY':'SIGNAL ACTIVE')+' · '+T.length+' TRACKS'+fl))}
 setInterval(()=>{const e=E[cur];if(!e.duration||e.paused||xfing)return;if((e.duration-e.currentTime)/cfg.rate<=Math.max(cfg.xf,.15)+.05){const j=nextI(1);if(j>=0){xfing=1;load(j,1)}}},100);
 setInterval(()=>tt($('#clk'),new Date().toLocaleTimeString([], {hour12:false})),1000);
 function sleep(m){clearTimeout(slT);slEnd=0;if(!m)return;slEnd=Date.now()+m*6e4;slT=setTimeout(()=>{master.gain.setTargetAtTime(0,AC.currentTime,2);setTimeout(()=>{E.forEach(e=>e.pause());slEnd=0;ap()},6000)},m*6e4)}
 /* lists */
 function pk(id){let i=Q.indexOf(id);if(i<0){Q.push(id);i=Q.length-1}load(i,0)}
-function del(id,keep){const c=Q[qi];T=T.filter(t=>t.id!=id);tm.delete(id);Q=Q.filter(i=>i!=id);if(!keep){fav.delete(id);for(const k in pl)pl[k]=pl[k].filter(i=>i!=id)}tx('readwrite',s=>s.delete(id));tx('readwrite',s=>s.delete('\u0001pk'+id));qi=Q.indexOf(c);if(c==id){E.forEach(e=>e.pause());pkv=[];pkId++;lines=[];eLy.textContent='';$('#ti').textContent='STANDBY';$('#ar').textContent='Load music to begin'}sv();rl()}
+function del(id,keep){const c=Q[qi];T=T.filter(t=>t.id!=id);tm.delete(id);Q=Q.filter(i=>i!=id);if(!keep){fav.delete(id);for(const k in pl)pl[k]=pl[k].filter(i=>i!=id)}tx('readwrite',s=>s.delete(id));tx('readwrite',s=>s.delete('\u0001pk'+id));if(ins.has(id)){ins.delete(id);tx('readwrite',s=>s.delete('\u0001in'+id))}qi=Q.indexOf(c);if(c==id){E.forEach(e=>e.pause());pkv=[];pkId++;lines=[];eLy.textContent='';$('#ti').textContent='STANDBY';$('#ar').textContent='Load music to begin'}sv();rl()}
 function moveQ(i,j){if(j<0||j>=Q.length||i==j)return;const on=Q[qi],[x]=Q.splice(i,1);Q.splice(j,0,x);qi=Q.indexOf(on);sv();rl()}
 function tabs(el,list,c,set){el.textContent='';list.forEach(([k,n])=>{const b=B(n,()=>set(k));if(k==c)b.className='on';el.append(b)})}
 function mark(){const on=Q[qi];document.querySelectorAll('#ll .row').forEach(r=>r.classList.toggle('on',r.dataset.id===on));const r=document.querySelector('#ll .row.on');if(r)r.scrollIntoView({block:'nearest'})}
@@ -418,7 +447,7 @@ function rr(){tabs($('#rt'),[['aud','Audio'],['sty','Style'],['sys','System']],r
 if(rtab=='aud'){P.append(h('h4','','10-band EQ'));const eb=h('div','eqb');F.forEach((f,j)=>{const c=h('div','bd'),i=h('input','vr');i.type='range';i.min=-12;i.max=12;i.step=.5;i.value=cfg.eq[j];i.oninput=()=>{cfg.eq[j]=+i.value;ap();sv()};i._rs=()=>{cfg.eq[j]=0;i.value=0;ap();sv()};c.append(i,h('small','',f<1000?f:f/1000+'k'));eb.append(c)});P.append(eb);
 const s=h('select');s.append(h('option','','Preset…'));[...Object.keys(PR),...Object.keys(cfg.prof)].forEach(k=>s.append(h('option','',k)));s.onchange=()=>{const a=PR[s.value]||cfg.prof[s.value];if(a){cfg.eq=[...a];ap();sv();rr()}};P.append(s);
 P.append(h('h4','','Tone'));sl(P,'Bass boost','bass',0,15,.5);sl(P,'Treble','tre',-12,12,.5);sl(P,'Vocal boost','voc',0,12,.5);
-P.append(h('h4','','Vocal remover'));{const f=h('div','flex');tgl(f,'Remove vocals','vr');P.append(f);sl(P,'Strength','vrk',0,1,.05,v=>Math.round(v*100)+'%');sl(P,'Width','vrw',0,1,.05,v=>Math.round(v*100)+'%');sl(P,'Extra mid cut','vrc',0,15,.5,v=>v+' dB');P.append(h('small','','Mode: '+(wk?'smart (spectral)':'classic')+'. Still hearing the voice? Raise Width (catches off-centre vocals) and Extra mid cut. Works on stereo songs only; reverb and wide backing vocals can remain.'))}
+P.append(h('h4','','Vocal remover'));{const f=h('div','flex');tgl(f,'Remove vocals','vr');tgl(f,'AI','ai');tgl(f,'Fast AI','aif');tgl(f,'Gentle (low CPU)','ail');f.append(B('Process queue',()=>{Q.forEach(i=>aiAdd(i));flash('AI: '+insQ.length+' SONG(S) QUEUED')},'Make AI instrumentals for every song in the queue (runs in the background)'));P.append(f);sl(P,'Strength','vrk',0,1,.05,v=>Math.round(v*100)+'%');sl(P,'Width','vrw',0,1,.05,v=>Math.round(v*100)+'%');sl(P,'Extra mid cut','vrc',0,15,.5,v=>v+' dB');P.append(h('small','','AI separates the real voice with a neural model: each song is processed once, saved, and then plays instantly as a vocal-free version. Fast AI is about 3x quicker (slightly lower quality); turn it off for the best quality. Gentle keeps your computer responsive but takes longer. Until it is ready, the live filter plays ('+(wk?'smart':'classic')+' mode; Width and Extra mid cut tune it).'))}
 P.append(h('h4','','Playback'));sl(P,'Speed','rate',.5,2,.05,v=>v+'x');sl(P,'Crossfade','xf',0,12,1,v=>v+'s');
 det(P,'SPACE & BALANCE',d=>{sl(d,'Surround','sur',0,1,.05);sl(d,'Reverb','rev',0,1,.05);sl(d,'Balance L/R','bal',-1,1,.05);const f=h('div','flex');tgl(f,'Mono','mono');tgl(f,'Normalize','norm');d.append(f)});
 det(P,'SAVE EQ PROFILE',d=>{const pn=h('input');pn.placeholder='profile name';d.append(pn,B('Save EQ',()=>{if(pn.value.trim()){cfg.prof[pn.value.trim()]=[...cfg.eq];sv();rr()}}))})}
@@ -445,10 +474,12 @@ items.forEach(i=>mk(i,CM));CM.style.display='block';CM.style.left=x+'px';CM.styl
 CM.style.left=Math.max(0,Math.min(x,innerWidth-r.width-4))+'px';CM.style.top=Math.max(0,Math.min(y,innerHeight-r.height-4))+'px';if(x+r.width+200>innerWidth)CM.classList.add('fl')}
 const ck=(on,l)=>(on?'✓ ':'   ')+l;
 function vrTog(){cfg.vr=cfg.vr?0:1;ap();sv();flash(cfg.vr?'VOCAL REMOVER ON':'VOCAL REMOVER OFF');if(rtab=='aud')rr()}
+function liveOpen(code){if(window.liveShow)return liveShow(code);const a=document.createElement('script');a.src='lib/peerjs.min.js';a.onload=()=>{const b=document.createElement('script');b.src='live.js';b.onload=()=>liveShow(code);b.onerror=()=>flash('LIVE ROOM FILES MISSING');document.head.append(b)};a.onerror=()=>flash('LIVE ROOM FILES MISSING (lib/peerjs.min.js)');document.head.append(a)}
+{const rq=new URLSearchParams(location.search).get('room');if(rq)setTimeout(()=>liveOpen(rq),900)}
 function appItems(){const e=E[cur],id=Q[qi],bc=c=>document.body.classList.contains(c);
 const it=[{t:e.paused?'▶  Play':'⏸  Pause',f:tg},{t:'⏭  Next',f:()=>go(1)},{t:'⏮  Previous',f:()=>go(-1)},'-',
 {t:ck(cfg.sh,'Shuffle'),f:()=>{cfg.sh=cfg.sh?0:1;sv()}},{t:'Repeat: '+['Off','All','One'][cfg.rp],f:()=>{cfg.rp=(cfg.rp+1)%3;sv()}},
-{t:fav.has(id)?'♥  Remove current from favorites':'♡  Add current to favorites',f:favCur,dis:!id},{t:ck(muted,'Mute'),f:mute},{t:ck(cfg.vr,'Remove vocals (karaoke)   V'),f:vrTog},'-',
+{t:fav.has(id)?'♥  Remove current from favorites':'♡  Add current to favorites',f:favCur,dis:!id},{t:ck(muted,'Mute'),f:mute},{t:ck(cfg.vr,'Remove vocals (karaoke)   V'),f:vrTog},{t:'🎙  Live room'+(window.liveLabel?liveLabel():'')+'…',f:()=>liveOpen()},'-',
 {t:'View',sub:[{t:ck(bc('focus'),'Focus mode'),f:focusT},{t:ck(bc('room'),'Room mode'),f:roomT},{t:ck(cfg.amb,'Ambient glow'),f:()=>{cfg.amb=cfg.amb?0:1;th();sv();if(rtab=='sys')rr()}}]},
 {t:'Images',sub:[{t:'Set track art…',f:()=>$('#fart').click(),dis:!id},{t:'Set background…',f:()=>$('#fbg').click()},{t:'Clear background',f:clearBg}]},
 {t:'Sleep timer',sub:[15,30,60,0].map(m=>({t:m?m+' min':'Off',f:()=>sleep(m)}))}];
@@ -462,6 +493,7 @@ it.push('-',{t:fav.has(id)?'☆  Remove favorite':'★  Add to favorites',f:()=>
 {t:'Add to list',sub:ls.length?ls.map(k=>({t:(pl[k].includes(id)?'✓ ':'   ')+k,f:()=>{if(!pl[k].includes(id)){pl[k].push(id);sv()}}})):[{t:'No lists yet — open the Lists tab',f:()=>{tab='pl';rl()}}]},'-');
 if(ctx=='q'){it.push({t:'Move up',dis:i<=0,f:()=>moveQ(i,i-1)},{t:'Move down',dis:i>=Q.length-1,f:()=>moveQ(i,i+1)},{t:'Remove from queue',f:()=>{const c=Q[qi];Q.splice(i,1);qi=Q.indexOf(c);sv();rl()}})}
 if(ctx=='pl')it.push({t:'Remove from list',f:()=>{pl[plSel]=pl[plSel].filter(x=>x!=id);sv();rl()}});
+it.push({t:ins.has(id)?'Delete AI instrumental':'Make instrumental (AI)',f:()=>ins.has(id)?aiDel(id):aiAdd(id,1)});
 const tk=tr(id);if(tk&&tk.disk)it.push({t:'Show in folder',f:()=>APP.reveal(id)},{t:'Remove from library (file stays on disk)',f:()=>APP.ignore(id)});
 else it.push({t:'Delete from library…',f:()=>{if(tk&&confirm('Delete "'+tk.ti+'" from the library?'))del(id)}});return it}
 function textItems(t){return[{t:'Cut',f:()=>{t.focus();document.execCommand('cut')}},{t:'Copy',f:()=>{t.focus();document.execCommand('copy')}},{t:'Paste',f:()=>{t.focus();document.execCommand('paste')}},{t:'Select all',f:()=>{t.focus();t.select()}}]}
@@ -471,12 +503,12 @@ else if(s&&s._rs)it=[{t:'Reset to default',f:s._rs}];
 else if(t.matches('textarea,input[type=text],input:not([type])'))it=textItems(t);
 else it=appItems();
 menu(e.clientX,e.clientY,it)});
-addEventListener('click',hideMenu);addEventListener('blur',hideMenu);addEventListener('resize',hideMenu);
+addEventListener('keyup',e=>{if(e.key=='Alt'||e.key=='Meta')e.preventDefault()},true);addEventListener('click',hideMenu);addEventListener('blur',hideMenu);addEventListener('resize',hideMenu);
 $('#bm').onclick=e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();menu(r.left,r.bottom+4,appItems())};
-addEventListener('keydown',e=>{if(e.key=='Escape')hideMenu();if(listen){cfg.keys[listen]=e.key;listen=null;sv();rr();e.preventDefault();return}if(e.target.matches('textarea,select,input:not([type=range])'))return;
+addEventListener('keydown',e=>{if(MODK.includes(e.key)){if(e.key=='Alt'||e.key=='Meta')e.preventDefault();return}if(e.key=='Escape')hideMenu();if(listen){cfg.keys[listen]=e.key;listen=null;sv();rr();e.preventDefault();return}if(e.target.matches('textarea,select,input:not([type=range])'))return;
 if(e.shiftKey&&(e.key=='ArrowRight'||e.key=='ArrowLeft')){e.preventDefault();seek(e.key=='ArrowRight'?10:-10);return}
 if((e.key=='ArrowUp'||e.key=='ArrowDown')&&!e.target.matches('input[type=range]')){e.preventDefault();vol(e.key=='ArrowUp'?.05:-.05);return}
-const A={play:tg,next:()=>go(1),prev:()=>go(-1),mute,fav:favCur,focus:focusT,vocal:vrTog};for(const k in A)if(cfg.keys[k]==e.key){e.preventDefault();if(e.target.blur)e.target.blur();A[k]();break}});
+if(e.altKey||e.ctrlKey||e.metaKey)return;const A={play:tg,next:()=>go(1),prev:()=>go(-1),mute,fav:favCur,focus:focusT,vocal:vrTog};for(const k in A)if(cfg.keys[k]==e.key){e.preventDefault();if(e.target.blur)e.target.blur();A[k]();break}});
 /* Two versions of the site: this web version, and the Windows app (shown only in the browser, never inside the app).
    Put the built installers next to index.html in the downloads/ folder, or change the links here. */
 /* On GitHub Pages the installers come from the repo's latest Release (the .exe files are too big for Pages itself).
@@ -509,7 +541,7 @@ if(!APP&&!standalone&&!coarse){let seen=0;try{seen=localStorage.getItem('orpheus
 /* boot */
 th();ap();rr();rl();fr();
 (async()=>{const all=await tx('readonly',s=>s.getAll())||[],pks=new Map();T=[];
-for(const r of all){if(r.id[0]!=='\u0001'){if(r.disk)cache.set(r.id,r);else if(!APP)T.push(r)}else if(r.id.startsWith('\u0001pk'))pks.set(r.id.slice(3),r.pk);else if(r.id=='\u0001bg')setBg(r.blob)}
+for(const r of all){if(r.id[0]!=='\u0001'){if(r.disk)cache.set(r.id,r);else if(!APP)T.push(r)}else if(r.id.startsWith('\u0001pk'))pks.set(r.id.slice(3),r.pk);else if(r.id.startsWith('\u0001in'))ins.set(r.id.slice(3),r.blob);else if(r.id=='\u0001bg')setBg(r.blob)}
 T.forEach(t=>{t.pk=pks.get(t.id);tm.set(t.id,t)});cache.forEach(t=>t.pk=pks.get(t.id));
 if(APP){const lb=await APP.getLibrary();folders=lb.folders||[];upsert(lb.files,1);
  const live=new Set(lb.files.map(e=>e.p));cache.forEach((t,id)=>{if(!live.has(id)){tx('readwrite',s=>s.delete(id));tx('readwrite',s=>s.delete('\u0001pk'+id))}});cache.clear();

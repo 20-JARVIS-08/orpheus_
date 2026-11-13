@@ -1,0 +1,5 @@
+@font-face{font-family:Orbitron;font-weight:500;font-display:swap;src:url(orbitron-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:Orbitron;font-weight:700;font-display:swap;src:url(orbitron-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:"Share Tech Mono";font-weight:400;font-display:swap;src:url(share-tech-mono-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:Vazirmatn;font-weight:400;font-display:swap;src:url(vazirmatn-arabic-400-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E}
+@font-face{font-family:Vazirmatn;font-weight:400;font-display:swap;src:url(vazirmatn-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF}

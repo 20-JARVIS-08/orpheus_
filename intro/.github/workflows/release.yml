@@ -1,0 +1,35 @@
+name: Build Windows app and publish Release
+# Run by pushing a tag like v1.0.0 (or by hand from the Actions tab).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: node setup-ai.js
+      - run: npm ci
+      - run: npx electron-builder --win nsis portable --publish never
+      - name: Publish Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/ORPHEUS-Setup.exe
+            dist/ORPHEUS-portable.exe
+      - name: Keep the files when run by hand
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: orpheus-windows
+          path: |
+            dist/ORPHEUS-Setup.exe
+            dist/ORPHEUS-portable.exe
