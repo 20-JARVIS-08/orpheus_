@@ -268,7 +268,7 @@ body[data-v=player] #C{display:grid;grid-template-columns:minmax(0,.85fr) minmax
 body.lyr #ly{grid-column:2;grid-row:2/4}
 body.lyr #wf,body.lyr #tms{display:none}
 }
-</style><script>try{var q=location.search,rm=matchMedia('(prefers-reduced-motion:reduce)').matches;if(/[?&]intro\b/.test(q)||(!rm&&!/[?&](nointro|shared)\b/.test(q)))document.documentElement.className+=' intro-on'}catch(e){}</script><style>
+</style><script>try{var q=location.search,rm=matchMedia('(prefers-reduced-motion:reduce)').matches,ap=!!window.Capacitor||(location.protocol=='https:'&&location.hostname=='localhost');if(/[?&]intro\b/.test(q)||(!rm&&!ap&&!/[?&](nointro|shared)\b/.test(q))){document.documentElement.className+=' intro-on';/* failsafe: never let the intro cover the app for more than 15 s */setTimeout(function(){try{var i=document.getElementById('intro');if(i)i.remove();document.documentElement.classList.remove('intro-on')}catch(e){}},15000)}}catch(e){}</script><style>
 /* ---- intro (logo motion) ---- */
 #intro{display:none;position:fixed;inset:0;z-index:9999;background:#fff;color:#000;overflow:hidden;font-family:'Orbitron',sans-serif;transition:background-color .9s ease,color .9s ease,opacity .6s ease}
 .intro-on #intro{display:block}
