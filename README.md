@@ -28,14 +28,11 @@ Plays every time the site or the Windows app opens (also on refresh). The name s
 - Timings are the constants at the top of the intro script near the end of `index.html` (`TP` = pluck times, `TAU` = how fast the strings settle, `T_SW0/T_SW1` = swap, `NAME` = text).
 - The lyre is traced from `intro/lyre-source.png` by `intro/trace.py` (needs `pip install potracer numpy pillow`).
 
-## AI vocal removal (real voice separation)
-Audio tab → Vocal remover → **Remove vocals** + **AI (best)**. A neural model (MDX-Net "Inst_HQ_3", `models/vocal.onnx`, 65 MB) runs inside the app with onnxruntime-web (`sep-worker.js`, `vendor/ort/`). Each song is processed once, saved in the app's storage and then plays instantly as an instrumental. While it is being made, the live filter (`vocal-worklet.js`) plays instead.
-- Uses the GPU (WebGPU) when available, otherwise the CPU; several CPU threads are used when the page is cross-origin isolated (always in the Windows app; on the website from the 2nd visit, via `sw.js`).
-- Right-click a song → *Make instrumental (AI)*; the **Process queue** button does the whole queue in the background.
-- `models/` and `vendor/` are not in the source zip (too big): run `node setup-ai.js` once (build.bat and both GitHub workflows do it automatically). Keep them next to `index.html` when uploading the website.
-
-## Live room (listen together)
-Includes a text chat between everyone in the room. Menu (right-click / ⋯) → **Live room…** → *Host a room* gives a code and a link (`?room=CODE`); others open the link or type the code and hear the host's music live (up to 8 listeners). Peer-to-peer WebRTC via PeerJS (`lib/peerjs.min.js`, `live.js`); the free PeerJS cloud only introduces the browsers. The host streams the app's output (with EQ/effects). In the Windows app, type your website address in the panel so the share link points to your GitHub Pages site.
-
-### Live room: if two devices cannot connect
-Live room → *Advanced / connection problems* → **Test connection** (run it on both devices). It checks (1) the PeerJS connection service, (2) STUN (public address) and (3) an optional TURN relay. If (1) fails, the service is blocked on that network: use a VPN or run your own PeerJS server and enter it under *Own PeerJS server* (host and listeners must use the same one). If (2) fails or the link says "failed", add a TURN relay (URL, user, password) on the host and/or listeners.
+## Android
+Best experience: open the site in Chrome on Android → menu ⋮ → **Install app** (or the ⬇ button in ORPHEUS's ⋯ menu). Then it opens fullscreen like a normal app.
+- Bottom navigation (Library / Now Playing / Settings), mini player, full-screen Now Playing (swipe down to close), landscape layout with a side navigation rail.
+- The Android **Back** button closes the open menu first, then Now Playing, then goes from Settings back to Library.
+- Lock-screen / notification controls with a seek bar (Media Session), cover art or the app icon.
+- **Share to ORPHEUS:** in any file manager or app, share audio files → ORPHEUS (works once the app is installed). They are added to the library and start playing.
+- Typing in the search box hides the bottom bars; pull-to-refresh is disabled so swiping down on Now Playing never reloads the page.
+- Android browsers have no folder picker, so only "Add songs" is shown on phones. Songs are stored inside the app's browser storage.

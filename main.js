@@ -169,7 +169,7 @@ function toggleFullscreen() { if (win) win.setFullScreen(!win.isFullScreen()); }
 function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 900, minHeight: 600,
-    fullscreen: true, show: false, backgroundColor: '#000000', autoHideMenuBar: false, title: 'ORPHEUS',
+    fullscreen: true, show: false, backgroundColor: '#000000', autoHideMenuBar: true, title: 'ORPHEUS',
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -178,7 +178,6 @@ function createWindow() {
     },
   });
   Menu.setApplicationMenu(null);
-  win.setMenuBarVisibility(false);
   win.once('ready-to-show', () => win.show());
   win.loadURL('orpheus://app/index.html');
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -187,8 +186,6 @@ function createWindow() {
   win.on('leave-full-screen', () => win.webContents.send('fs', false));
   win.on('closed', () => { win = null; libReady = false; uiReady = false; });
   win.webContents.on('before-input-event', (e, i) => {
-    /* a lone Alt press/release must do nothing (on Windows it would otherwise activate the hidden menu bar and steal focus) */
-    if (i.key === 'Alt' && !i.control && !i.shift) { e.preventDefault(); return; }
     if (i.type !== 'keyDown') return;
     if (i.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
     else if (i.control && i.key.toLowerCase() === 'q') { e.preventDefault(); app.quit(); }
@@ -227,7 +224,7 @@ async function serveMedia(req, p) {
 
 /* orpheus://app/index.html, /fonts/*, and /_m/<encoded absolute path> for media */
 function registerProtocol() {
-  protocol.handle('orpheus', async (req) => {
+  protocol.handle('orpheus', (req) => {
     const u = new URL(req.url);
     if (u.pathname.startsWith('/_m/')) {
       let p;
@@ -236,11 +233,8 @@ function registerProtocol() {
       return serveMedia(req, p);
     }
     const rel = decodeURIComponent(u.pathname).replace(/^\/+/, '') || 'index.html';
-    if (!/^(index\.html|live\.js|lib\/[\w.-]+|vocal-worklet\.js|sep-worker\.js|models\/[\w.-]+|vendor\/ort\/[\w.-]+|fonts\/[\w.-]+|icons\/[\w.-]+|manifest\.webmanifest)$/.test(rel)) return new Response('not found', { status: 404 });
-    const r = await net.fetch(pathToFileURL(path.join(__dirname, rel)).toString(), { bypassCustomProtocolHandlers: true });
-    /* cross-origin isolation lets the AI engine use several CPU threads */
-    const hd = new Headers(r.headers); hd.set('Cross-Origin-Opener-Policy', 'same-origin'); hd.set('Cross-Origin-Embedder-Policy', 'require-corp'); hd.set('Cross-Origin-Resource-Policy', 'same-origin');
-    return new Response(r.body, { status: r.status, statusText: r.statusText, headers: hd });
+    if (!/^(index\.html|fonts\/[\w.-]+|icons\/[\w.-]+|manifest\.webmanifest)$/.test(rel)) return new Response('not found', { status: 404 });
+    return net.fetch(pathToFileURL(path.join(__dirname, rel)).toString(), { bypassCustomProtocolHandlers: true });
   });
 }
 

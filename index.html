@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self' blob: https://0.peerjs.com wss://0.peerjs.com">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self' blob:">
 <title>ORPHEUS</title>
-<meta name="description" content="ORPHEUS audio player: equalizer, visualizer, synced lyrics, playlists. Runs in the browser, installable, and available as a Windows app.">
+<meta name="description" content="ORPHEUS audio player: equalizer, visualizer, playlists. Runs in the browser, installable, and available as a Windows app.">
 <meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ORPHEUS"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -66,15 +66,14 @@ canvas{width:100%;display:block}#vz{height:36px}#wf{height:56px;cursor:pointer;b
 #ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
 #ctl button{min-width:40px}#pp{font-size:16px;border-radius:50%;width:48px;height:48px;min-width:0;padding:0}
 #ctl input[type=range]{width:110px}
-#ly{text-align:center;min-height:90px}#ly div{padding:3px;color:#666;transition:color .2s;unicode-bidi:plaintext}#ly div.on{color:#fff;font-size:17px}
 .sl{display:grid;grid-template-columns:78px 1fr 44px;gap:4px;align-items:center}.sl em{font-style:normal;color:#999;text-align:right;font-size:11px}
 small{color:#999}
 .eqb{display:flex;justify-content:space-between}.bd{display:flex;flex-direction:column;align-items:center;font-size:10px}
 .vr{writing-mode:vertical-lr;direction:rtl;width:22px;height:90px}
 .flex{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-body.focus .side,body.focus #ly,body.focus #vz,body.room .side{display:none}
+body.focus .side,body.focus #vz,body.room .side{display:none}
 body.focus #m,body.room #m{grid-template-columns:minmax(0,640px);justify-content:center}
-body.room #dw{width:min(70vh,560px)}body.room #vz{height:22vh}body.room #ly div.on{font-size:24px}
+body.room #dw{width:min(70vh,560px)}body.room #vz{height:22vh}
 #cm{position:fixed;z-index:99;display:none;min-width:200px;background:#0b0b0b;border:1px solid #fff;padding:3px 0;box-shadow:0 8px 30px #000;font-size:12px;user-select:none}
 #cm div{padding:5px 16px;cursor:pointer;white-space:nowrap;position:relative;color:#ddd}
 #cm div:hover{background:#e6e6e6;color:#000}
@@ -102,66 +101,161 @@ body.app #bdl{display:none}
 #dlb a.btn.pri:hover{background:#fff}
 #dlb .note{color:#999;font-size:11px;margin-top:2px}
 #dlx{position:absolute;top:8px;right:8px;padding:2px 8px}
-@media(max-width:959px){
-html{-webkit-text-size-adjust:100%}html,body{height:auto}
-body{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-header{height:auto;min-height:44px;padding:6px 10px;gap:6px 8px}
-#m{grid-template-columns:minmax(0,1fr);height:auto;padding:8px;gap:8px}
-#C{order:-1}
-#dw{width:min(76vw,34vh,340px)}
-#top{order:1}#ctl{order:2}#wf{order:3}#rl2{order:4}#vz{order:5}#gs{order:6}#ly{order:7}
-#ll{max-height:48vh;max-height:48dvh}
-#rr{max-height:none;overflow:visible}
-#ly{min-height:48px;max-height:30vh}
-.g{width:64px!important;height:64px!important}#gs{gap:10px}
-#ctl{flex-wrap:nowrap;gap:10px;width:100%}
-#ctl button{min-width:44px;min-height:44px}
-#ctl #pp{width:60px;height:60px;font-size:20px;min-height:0}
-#ctl input[type=range]{width:auto;flex:1 1 80px;min-width:70px}
-.sl{grid-template-columns:92px 1fr 40px}
-#dlb{padding:16px}
-}
-/* small tablets: player on top, library and settings side by side */
-@media(min-width:600px) and (max-width:959px){#m{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#C{grid-column:1/-1}}
-/* phones in portrait: header wraps into clean rows */
-@media(max-width:599px){
-.lg{order:1}#clk{order:2;margin-left:auto}header::after{content:'';order:2;flex:1 0 100%;height:0}
-header>button{order:3;flex:1 1 auto;min-height:40px;padding:6px 10px}
-#stat{order:4;flex:1 1 100%;min-width:0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-}
-/* phones in landscape: player left, library + settings stacked on the right */
-@media(max-width:959px) and (orientation:landscape) and (max-height:520px){
-#m{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
-#m>#C{grid-column:1;grid-row:1/span 2;order:0}
-#m>section:nth-child(1){grid-column:2;grid-row:1}
-#m>section:nth-child(3){grid-column:2;grid-row:2}
-#dw{width:min(36vh,190px)}
-#ll{max-height:70vh}
-body.focus #m>#C,body.room #m>#C{grid-column:1/-1;grid-row:auto}
-}
-/* touch screens: bigger tap targets, no iOS zoom-on-focus, tap-friendly menus */
-@media(pointer:coarse){
-button,.row,summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-button{min-height:40px;padding:8px 12px}
-header button{min-height:32px;padding:4px 10px}
-.tabs button{min-height:36px;padding:6px 10px;font-size:12px}
-input,select,textarea{font-size:16px;padding:8px}
-input[type=range]{padding:0}
-.row{padding:12px 6px;contain-intrinsic-size:auto 46px}
-input[type=range]:not(.vr){height:32px}
-input[type=range]:not(.vr)::-webkit-slider-runnable-track{height:4px}
-input[type=range]:not(.vr)::-webkit-slider-thumb{width:16px;height:28px;margin-top:-12px}
-.vr{width:30px;height:130px}
-summary{padding:10px 0}
-#cm{max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px);overflow-y:auto}
-#cm div{padding:12px 18px}
-#cm .sub{position:static;border:0;border-left:1px solid #555;margin:6px 0 0 6px;padding:0;min-width:0}
-#cm div:hover>.sub{display:none}
 #cm div.open>.sub{display:block}
-#cm.fl .sub{left:auto;right:auto}
+#nav,#mini,#npt,#npa,#tms,.vt,#bplus,#cmb,.row .th,.row .mo,#cm .mh{display:none}
+.row .n .t{font-weight:400}
+.row .n .a{font-size:inherit;color:inherit}
+.row .n .a::before{content:' · '}
+.row .n .t,.row .n .a,#mt,#ma{unicode-bidi:plaintext}
+.row .fv{color:#fff;font-size:11px}
+#wf{touch-action:none}
+@keyframes npup{from{transform:translateY(100%)}to{transform:none}}
+@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes eqb{50%{background-size:3px 100%,3px 40%,3px 90%}}
+/* ---- touch screens (any width): bigger targets ---- */
+@media(pointer:coarse){
+*{-webkit-tap-highlight-color:transparent}
+button{min-height:38px;touch-action:manipulation}
+input,select,textarea{font-size:16px;min-height:38px}
+input[type=range]:not(.vr){height:32px}
+input[type=range]:not(.vr)::-webkit-slider-runnable-track{height:3px}
+input[type=range]:not(.vr)::-webkit-slider-thumb{width:16px;height:30px;margin-top:-13px}
+.vr{width:32px;height:130px}
+#cm{max-height:80vh;overflow:auto;min-width:230px}
+#cm div{padding:13px 18px}
+#cm .sub{position:static;border:0;border-left:1px solid #444;margin:4px 0 2px 10px;padding:0;min-width:0}
+#cm div:hover>.sub{display:none}#cm div.open>.sub{display:block}
+#dlb a.btn,#dlb button.btn,#dlb button{min-height:44px}
 }
-@media(max-width:599px) and (pointer:coarse){header>button{min-height:40px;padding:6px 10px}}
-</style><script>try{var q=location.search,rm=matchMedia('(prefers-reduced-motion:reduce)').matches;if(/[?&]intro\b/.test(q)||(!rm&&!/[?&]nointro/.test(q)))document.documentElement.className+=' intro-on'}catch(e){}</script><style>
+/* ---- phones & small windows: native-player style ---- */
+@media(max-width:959px),(pointer:coarse) and (max-height:520px){
+html,body{height:100%;overflow:hidden}
+body{height:100vh;height:100dvh;display:flex;flex-direction:column}
+/* app bar */
+header{height:auto;min-height:56px;padding:8px 14px;gap:8px;border-bottom:0;flex-wrap:nowrap}
+header #bf,header #bd,header #bdl,header #clk,header #stat{display:none}
+header .lg{margin-right:auto;font-size:13px}
+header button{width:42px;height:42px;padding:0;border-radius:50%;font-size:18px;line-height:1;min-height:0}
+#bplus{display:inline-grid;place-items:center}
+#wc{margin-left:0;padding-left:0;border-left:0}
+/* screens */
+#m{display:flex;flex:1;min-height:0;height:auto;padding:0}
+.pn{display:none;flex:1;min-width:0;min-height:0;border:0;background:transparent;padding:0 14px;gap:6px}
+.pn::before,.pn::after{display:none}
+body[data-v=lib] #L,body[data-v=set] #R{display:flex}
+.vt{display:block;margin:0 0 2px;font:700 26px Orbitron,Vazirmatn,sans-serif;letter-spacing:.04em;color:#fff}
+.tabs{flex:none;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:2px 0 8px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;border-radius:99px;padding:8px 16px;min-height:36px;font-size:12px;white-space:nowrap}
+.sc::-webkit-scrollbar{width:0}
+#ll input[type=search]{position:sticky;top:0;z-index:2;border-radius:99px;padding:10px 18px;margin:0 0 8px;background:#111;border-color:#333}
+/* song rows: cover, two lines, more button */
+.row{gap:12px;padding:8px 6px;border-bottom:0;min-height:64px;border-radius:14px;contain-intrinsic-size:auto 64px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.row:hover{background:transparent}.row:active{background:rgba(255,255,255,.06)}
+.row.on{background:rgba(255,255,255,.09)}
+.row .th{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:10px;background:#1a1a1a;border:1px solid #333;overflow:hidden;position:relative;color:#888;font:700 16px Orbitron,sans-serif}
+.row .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row.on .th::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.row.on .th::before{content:'';position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;z-index:2;background:linear-gradient(#fff,#fff) 0 100%/3px 40% no-repeat,linear-gradient(#fff,#fff) 50% 100%/3px 100% no-repeat,linear-gradient(#fff,#fff) 100% 100%/3px 60% no-repeat}
+body.isplay .row.on .th::before{animation:eqb .9s ease-in-out infinite}
+.row .n{display:flex;flex-direction:column;gap:2px;min-width:0;overflow:hidden}
+.row .n .t,.row .n .a{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .n .t{font-size:15px;color:#fff;font-family:Vazirmatn,"Share Tech Mono",sans-serif}
+.row .n .a{font-size:12px;color:#999}
+.row .n .a::before{content:none}
+.row .fv{font-size:13px}
+.row .mo{display:grid;place-items:center;flex:none;width:40px;height:40px;min-height:0;padding:0;border:0;border-radius:50%;font-size:20px;color:#aaa;background:transparent}
+.row .mo:hover{background:transparent;box-shadow:none;color:#fff}
+.row small{font-size:11px}
+/* settings */
+#rr details{border:1px solid #2a2a2a;border-radius:14px;padding:4px 14px;margin-top:10px}
+#rr summary{padding:10px 0}
+/* mini player + tab bar */
+#mini{display:flex;position:relative;align-items:center;gap:10px;margin:0 10px 6px;padding:8px;background:#101010;border:1px solid #333;border-radius:16px;overflow:hidden}
+body[data-v=player] #mini,body.nomini #mini{display:none}
+#mpg{position:absolute;left:0;top:0;height:2px;width:0;background:#fff}
+#mi{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+#mth{position:relative;flex:none;width:44px;height:44px;border-radius:9px;background:#1a1a1a;border:1px solid #333;display:grid;place-items:center;overflow:hidden;color:#888}
+#mth b{font-weight:400}
+#mth img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+#mtx{display:flex;flex-direction:column;min-width:0}
+#mt{font-weight:400;color:#fff;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ma{font-size:12px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mini button{width:44px;height:44px;border-radius:50%;padding:0;font-size:16px;min-height:0}
+#mpp{background:#e6e6e6;color:#000;border-color:#e6e6e6}
+#mpp:hover{background:#fff;color:#000}
+#nav{display:flex;border-top:1px solid #222;background:#050505;padding:6px 6px 2px}
+#nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;border-radius:0;background:transparent;color:#888;text-transform:none;letter-spacing:.03em;font-size:11px;min-height:54px;padding:4px 2px}
+#nav button i{font-style:normal;font-size:18px;padding:3px 18px;border-radius:99px;line-height:1.2}
+#nav button:hover{background:transparent;box-shadow:none;color:#fff}
+#nav button.on{color:#fff;background:transparent;box-shadow:none}
+#nav button.on i{background:#e6e6e6;color:#000}
+/* now playing: full-screen sheet */
+body[data-v=player] #C{display:flex;position:fixed;inset:0;z-index:60;padding:env(safe-area-inset-top,0px) 22px calc(16px + env(safe-area-inset-bottom,0px));gap:12px;background:radial-gradient(ellipse at 50% 28%,#1d1d1d,#000 72%);animation:npup .3s cubic-bezier(.2,.8,.2,1);overflow:hidden}
+#C>*{flex:none}
+#npt{display:flex;align-items:center;justify-content:space-between;padding-top:8px}
+#npt span{font:500 11px Orbitron,sans-serif;letter-spacing:.3em;color:#999}
+#npt button{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;padding:0;font-size:22px;line-height:1}
+#top{flex:1 1 0;min-height:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:12px;text-align:start}
+#dw{align-self:center;width:max(130px,min(80vw,calc(100vh - 480px),380px));width:max(130px,min(80vw,calc(100dvh - 480px),380px))}
+#inf{text-align:start}
+#ti{font-size:22px;line-height:1.25}
+#ar{font-size:15px;color:#aaa}
+#tm,#vz,#gs,#rl2{display:none}
+#wf{height:56px;border:0;border-radius:12px;background:#0b0b0b}
+#tms{display:flex;justify-content:space-between;color:#999;font-size:12px;margin-top:-6px}
+#ctl{justify-content:center;gap:14px 22px}
+#ctl>span{display:none}
+#ctl input#vol{flex:1 1 100%;order:9;margin-top:4px}
+#ctl button{width:58px;height:58px;min-width:0;border-radius:50%;padding:0;font-size:20px}
+#pp{width:78px!important;height:78px!important;background:#e6e6e6;color:#000;border-color:#e6e6e6;font-size:26px}
+#pp:hover{background:#fff;color:#000}
+#npa{display:flex;justify-content:space-between;gap:4px}
+#npa button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:transparent;color:#999;text-transform:none;letter-spacing:.03em;padding:4px 0;min-height:0;font-size:10px}
+#npa button i{font-style:normal;font-size:20px;line-height:1.3;padding:2px 14px;border-radius:99px;color:#ddd}
+#npa button small{color:inherit}
+#npa button:hover{background:transparent;box-shadow:none}
+#npa button.on{background:transparent;color:#fff;box-shadow:none}
+#npa button.on i{background:#e6e6e6;color:#000}
+/* menus become bottom sheets */
+#cmb{display:none;position:fixed;inset:0;z-index:98;background:rgba(0,0,0,.62)}
+#cm{left:0!important;right:0!important;top:auto!important;bottom:0!important;width:auto;max-height:78vh;overflow:auto;border:0;border-top:1px solid #444;border-radius:20px 20px 0 0;padding:6px 0 calc(10px + env(safe-area-inset-bottom,0px));animation:sheet .22s ease-out}
+#cm::before{content:'';display:block;width:40px;height:4px;border-radius:2px;background:#444;margin:6px auto 8px}
+#cm .mh{display:block;padding:4px 22px 12px;color:#fff;font-size:15px;border-bottom:1px solid #222;margin-bottom:4px;pointer-events:none;overflow:hidden;text-overflow:ellipsis}
+#cm div{padding:15px 22px;font-size:15px}
+#cm div:hover{background:transparent;color:#ddd}
+#cm div:active{background:#222}
+#cm .sub{border:0;margin:0 0 0 14px}
+}
+@media(max-width:959px) and (max-height:640px),(pointer:coarse) and (max-height:520px){
+#ti{font-size:18px}
+#ctl button{width:50px;height:50px}#pp{width:66px!important;height:66px!important}
+}
+
+/* ---- phones in landscape: nav rail on the left, compact lists, two-column Now Playing ---- */
+@media (max-width:959px) and (orientation:landscape) and (max-height:520px),(pointer:coarse) and (orientation:landscape) and (max-height:520px){
+body{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+header{grid-column:2;grid-row:1;min-height:44px;padding:4px 14px}
+header button{width:38px;height:38px}
+#m{grid-column:2;grid-row:2}
+#mini{grid-column:2;grid-row:3;margin:0 10px 6px;padding:5px 8px}
+#nav{grid-column:1;grid-row:1/-1;flex-direction:column;justify-content:center;gap:2px;border-top:0;border-right:1px solid #222;padding:6px 6px 6px max(6px,env(safe-area-inset-left))}
+#nav button{flex:none;min-height:58px;min-width:64px}
+.vt{display:none}
+.tabs{padding-bottom:6px}
+.row{min-height:56px;padding:4px 6px}.row .th{width:42px;height:42px}
+body[data-v=player] #C{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);grid-template-rows:auto minmax(0,1fr) auto auto auto;column-gap:28px;row-gap:6px;padding:env(safe-area-inset-top,0px) max(22px,env(safe-area-inset-right)) 8px max(22px,env(safe-area-inset-left))}
+#npt{grid-column:1/-1;grid-row:1;padding-top:4px}
+#top{grid-column:1;grid-row:2/-1}
+#wf{grid-column:2;grid-row:2;align-self:end;height:48px}
+#tms{grid-column:2;grid-row:3;margin-top:0}
+#ctl{grid-column:2;grid-row:4;gap:8px 18px}
+#ctl button{width:50px;height:50px}#pp{width:62px!important;height:62px!important}
+#npa{grid-column:2;grid-row:5}
+#dw{width:min(60vh,34vw,300px)}
+#ti{font-size:18px}#ar{font-size:13px}
+}
+</style><script>try{var q=location.search,rm=matchMedia('(prefers-reduced-motion:reduce)').matches;if(/[?&]intro\b/.test(q)||(!rm&&!/[?&](nointro|shared)\b/.test(q)))document.documentElement.className+=' intro-on'}catch(e){}</script><style>
 /* ---- intro (logo motion) ---- */
 #intro{display:none;position:fixed;inset:0;z-index:9999;background:#fff;color:#000;overflow:hidden;font-family:'Orbitron',sans-serif;transition:background-color .9s ease,color .9s ease,opacity .6s ease}
 .intro-on #intro{display:block}
@@ -177,43 +271,57 @@ summary{padding:10px 0}
 #ilyre.on{opacity:1}
 #intro button{all:unset;box-sizing:border-box;position:fixed;cursor:pointer;font:11px/1 'Share Tech Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#000;opacity:.5;padding:14px 16px;transition:opacity .2s,color .9s}
 #intro button:hover,#intro button:focus-visible{opacity:1}
-#intro #iskip{right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom))}
-#intro #isnd{left:50%;transform:translateX(-50%);bottom:max(8px,env(safe-area-inset-bottom));display:none;white-space:nowrap}
+#iskip{right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom))}
+#isnd{left:50%;transform:translateX(-50%);bottom:max(8px,env(safe-area-inset-bottom));display:none;white-space:nowrap}
 #isnd svg{width:14px;height:14px;vertical-align:-3px;margin-right:8px}
 #intro.dark button{color:#e6e6e6}
-</style></head><body><div id="intro" aria-hidden="true"><div id="itext" class="iw"></div>
+</style><style>
+/* ---- Android polish ---- */
+@media(max-width:959px),(pointer:coarse){html,body{overscroll-behavior:none}#ll,.sc,#cm{overscroll-behavior:contain}}
+body.kb #nav,body.kb #mini{display:none}
+.empty .cta{display:block;margin:22px auto 0;padding:14px 26px;border-radius:99px;background:#e6e6e6;color:#000;border:0;font:700 13px/1 Orbitron,sans-serif;letter-spacing:.14em}
+.empty .cta:active{transform:scale(.97)}
+</style><style>
+/* icon buttons: SVG icons, centred exactly */
+.ic{display:block;width:1.2em;height:1.2em;pointer-events:none}
+#bm{display:inline-grid;place-items:center;line-height:1}
+header #bm{min-width:34px}
+</style></head><body data-v="lib" class="nomini"><div id="intro" aria-hidden="true"><div id="itext" class="iw"></div>
 <svg id="ilyre" class="iw" viewBox="0 0 682 786" fill="currentColor"><path d="M337.8 775.5C337.2 775.3 336.6 774.7 336.4 774.1C335.9 772.8 335.0 769.2 335.0 768.4C335.0 767.0 330.1 750.8 327.6 744.2C324.8 736.9 324.4 735.7 323.0 732.9C322.2 731.4 321.3 729.3 320.9 728.3C320.6 727.3 319.8 725.7 319.2 724.8C318.6 723.8 317.1 721.1 315.9 718.8C312.9 713.0 309.7 707.8 306.0 703.0C304.3 700.8 302.6 698.5 300.3 695.3C299.6 694.3 298.2 692.8 297.4 691.8C296.5 690.9 295.3 689.5 294.7 688.7C293.5 686.8 288.7 682.1 286.7 680.7C285.8 680.2 284.2 678.7 283.0 677.5C281.8 676.3 280.0 674.7 279.0 674.0C278.0 673.3 276.9 672.4 276.5 672.0C275.9 671.3 263.5 663.0 258.8 660.1C255.9 658.4 244.3 652.6 242.5 652.0C241.8 651.8 240.3 651.1 239.2 650.6C237.3 649.7 235.7 649.0 225.7 645.5C219.4 643.2 203.6 639.0 196.0 637.5C194.4 637.2 192.2 636.7 191.1 636.5C190.0 636.2 188.5 636.0 187.9 636.0C187.3 636.0 186.0 635.8 185.0 635.5C184.0 635.2 182.2 635.0 181.0 635.0C179.8 635.0 178.0 634.8 177.0 634.5C176.0 634.2 174.4 634.0 173.5 634.0C172.6 634.0 171.0 633.8 170.0 633.5C169.0 633.2 167.7 633.0 167.1 633.0C166.5 633.0 164.1 632.6 161.9 632.0C159.7 631.5 156.3 630.7 154.5 630.3C148.2 628.9 134.5 624.0 127.7 620.8C125.6 619.8 123.4 618.9 122.9 618.8C122.4 618.7 121.1 618.0 120.0 617.3C118.8 616.6 116.3 615.1 114.2 614.1C107.1 610.6 89.6 599.0 85.8 595.4C84.9 594.5 83.5 593.3 82.7 592.7C81.8 592.2 80.4 590.9 79.5 590.0C78.6 589.0 77.0 587.7 76.0 587.0C74.0 585.6 62.0 573.7 62.0 573.0C62.0 572.8 60.6 571.2 59.0 569.5C57.3 567.8 55.4 565.6 54.7 564.6C53.9 563.6 52.7 562.0 52.0 561.0C46.8 554.0 42.5 547.7 40.0 543.5C39.2 542.1 37.9 540.1 37.2 538.9C35.6 536.4 26.6 518.3 26.0 516.5C25.8 515.8 25.1 514.2 24.5 513.0C22.9 509.8 16.3 489.5 15.3 484.7C15.1 483.8 14.5 481.3 14.0 479.1C13.4 476.9 13.0 474.5 13.0 473.9C13.0 473.3 12.8 472.0 12.5 471.0C12.2 470.0 12.0 468.4 12.0 467.5C12.0 466.6 11.8 465.0 11.5 464.0C11.2 463.0 11.0 460.7 11.0 459.0C11.0 457.3 10.8 455.0 10.5 454.0C9.9 451.7 9.8 430.5 10.4 428.7C10.6 428.0 10.9 425.3 11.0 422.7C11.1 420.0 11.4 417.0 11.6 416.0C12.4 412.0 12.8 409.8 13.0 408.0C14.2 397.7 21.6 372.7 26.7 361.7C27.4 360.1 28.1 358.5 28.2 358.0C28.6 356.7 39.0 336.0 40.0 334.5C40.5 333.8 41.3 332.3 41.8 331.3C44.2 326.5 56.5 308.1 64.0 298.0C64.7 297.0 66.0 295.3 66.7 294.3C67.4 293.3 68.5 292.1 69.0 291.5C69.9 290.5 71.1 289.0 73.9 285.0C74.7 284.0 75.6 282.9 76.0 282.5C76.4 282.1 77.3 281.0 78.0 280.0C78.7 279.0 79.8 277.6 80.5 277.0C81.2 276.4 82.3 275.0 83.0 274.0C83.7 273.0 84.6 271.9 85.0 271.5C85.4 271.1 86.3 270.0 87.0 269.0C87.7 268.0 88.6 266.9 89.0 266.5C89.4 266.1 90.3 265.0 91.0 264.0C91.7 263.0 92.8 261.6 93.5 261.0C94.2 260.4 95.3 259.0 96.0 258.0C96.7 257.0 97.8 255.6 98.5 255.0C99.2 254.4 100.3 253.0 101.0 252.0C101.7 251.0 102.8 249.6 103.5 249.0C104.2 248.4 105.3 247.0 106.0 246.0C106.7 245.0 107.8 243.6 108.5 243.0C109.2 242.4 110.3 241.0 111.0 240.0C111.7 239.0 112.6 237.9 113.0 237.5C113.4 237.1 114.3 236.0 115.0 235.0C115.7 234.0 116.6 232.9 117.0 232.5C117.4 232.1 118.2 231.2 118.8 230.3C119.3 229.5 120.3 228.3 120.9 227.7C122.0 226.4 123.3 224.8 127.0 219.5C128.3 217.7 130.1 215.2 131.0 214.0C131.9 212.8 134.0 209.8 135.6 207.4C145.6 192.3 150.9 181.6 155.6 167.3C158.0 160.1 158.5 158.1 159.0 153.8C159.2 152.6 159.5 151.0 159.7 150.3C160.2 148.4 160.1 130.2 159.5 128.0C159.2 127.0 159.0 125.7 159.0 125.1C159.0 118.7 150.3 98.3 146.0 94.5C145.6 94.1 144.7 93.0 144.0 92.0C142.5 89.8 137.2 84.5 134.7 82.7C129.9 79.2 127.9 77.9 124.5 76.2C116.4 72.2 106.6 70.2 101.1 71.4C99.8 71.7 98.3 72.1 97.6 72.2C91.7 73.1 85.1 79.9 83.2 87.2C82.3 90.5 79.3 96.8 77.6 98.9C77.0 99.6 76.1 100.8 75.7 101.5C73.0 105.5 64.1 109.5 54.9 110.9C52.9 111.2 43.1 109.0 40.5 107.7C30.7 102.8 21.0 88.9 21.0 79.6C21.0 78.6 20.8 77.0 20.5 76.0C20.2 75.0 20.0 73.4 20.0 72.5C20.0 71.6 20.2 70.0 20.5 69.0C20.8 68.0 21.0 66.5 21.0 65.7C21.0 64.2 21.5 61.4 22.6 57.0C24.1 50.7 31.9 37.7 37.6 31.9C39.0 30.5 41.0 28.7 42.0 28.0C43.0 27.3 44.1 26.4 44.5 26.0C45.5 24.9 52.5 20.3 55.3 18.9C61.3 15.8 75.8 11.0 79.0 11.0C79.6 11.0 81.0 10.8 82.0 10.5C84.6 9.8 103.4 9.8 106.0 10.5C107.0 10.8 108.5 11.0 109.3 11.0C112.6 11.0 128.4 15.0 133.0 17.0C134.2 17.5 135.5 18.0 136.0 18.2C142.3 20.0 164.4 33.2 169.7 38.1C170.3 38.7 171.5 39.7 172.3 40.3C174.3 41.6 186.9 54.4 188.3 56.3C188.8 57.2 189.8 58.4 190.5 59.0C195.9 64.1 207.0 84.3 210.8 95.8C213.5 104.2 216.0 114.7 216.0 117.7C216.0 118.5 216.2 120.0 216.5 121.0C216.9 122.5 217.0 125.4 217.0 136.0C217.0 146.6 216.9 149.5 216.5 151.0C216.2 152.0 216.0 153.6 216.0 154.5C216.0 155.4 215.8 157.0 215.5 158.0C215.2 159.0 215.0 160.3 215.0 160.9C215.0 163.6 210.3 180.8 208.1 186.3C205.9 191.8 204.9 194.3 204.1 196.2C203.2 198.8 195.1 214.8 193.3 217.7C188.4 225.7 179.5 239.3 175.0 245.5C173.6 247.5 171.3 250.7 170.0 252.5C165.9 258.3 162.6 262.9 160.9 265.1C160.1 266.2 157.8 269.3 156.0 272.0C154.2 274.7 151.9 277.8 151.0 279.0C142.1 290.6 120.3 323.3 115.0 333.0C113.4 335.9 112.1 338.2 110.1 341.2C108.7 343.5 102.6 355.8 102.0 357.5C101.8 358.2 101.1 359.8 100.5 361.0C99.9 362.2 98.6 365.8 97.5 369.0C96.4 372.2 95.4 375.3 95.1 375.8C93.9 378.1 90.0 393.8 90.0 396.2C90.0 396.7 89.8 398.0 89.5 399.0C89.2 400.1 89.0 402.3 89.0 404.5C89.0 406.7 88.8 408.9 88.5 410.0C87.8 412.6 87.8 423.4 88.5 426.0C88.8 427.0 89.0 429.2 89.0 430.9C89.0 432.6 89.2 435.0 89.5 436.1C89.7 437.2 90.2 439.4 90.5 441.0C91.8 447.8 92.1 449.0 92.9 452.3C93.3 454.3 94.1 456.7 94.5 457.8C95.0 458.9 96.3 462.6 97.5 466.0C98.6 469.4 100.0 473.1 100.6 474.2C101.1 475.3 101.8 476.8 102.0 477.5C102.6 479.3 109.6 493.4 111.2 495.9C111.9 497.1 113.2 499.1 114.0 500.5C116.5 504.7 125.2 517.8 126.0 518.5C126.4 518.9 127.3 520.0 128.0 521.0C128.8 522.0 130.1 523.8 131.0 525.0C131.9 526.2 133.1 527.8 133.7 528.7C134.6 529.9 142.0 537.7 149.1 544.9C151.5 547.3 156.9 552.3 158.0 553.0C158.6 553.4 159.9 554.5 160.8 555.4C163.6 558.0 180.9 570.0 185.0 572.0C186.2 572.6 187.8 573.5 188.5 574.0C190.2 575.2 208.1 584.1 210.8 585.1C211.9 585.6 214.0 586.4 215.5 587.0C217.0 587.6 219.1 588.4 220.3 588.9C221.4 589.3 223.1 590.0 224.0 590.5C225.7 591.4 227.1 591.9 234.0 594.5C240.9 597.1 242.3 597.6 244.2 598.6C245.3 599.1 246.5 599.7 247.0 599.8C248.2 600.2 254.2 602.8 256.0 603.8C256.8 604.3 260.8 606.3 264.8 608.4C268.9 610.4 272.8 612.5 273.5 613.0C274.2 613.5 278.5 615.7 283.0 618.0C290.7 621.8 295.4 624.7 301.0 629.0C303.3 630.7 305.6 632.4 308.7 634.7C309.7 635.4 311.5 637.0 312.7 638.1C313.9 639.3 315.5 640.7 316.3 641.3C317.9 642.3 323.8 648.3 325.5 650.5C326.6 651.9 327.3 652.0 330.7 650.7C332.2 650.1 333.3 650.0 336.8 650.0C339.6 650.0 341.8 649.8 343.0 649.5C346.7 648.5 353.7 648.8 354.8 650.0C356.2 651.5 356.3 651.5 361.9 645.6C364.8 642.7 367.8 639.8 368.6 639.3C369.5 638.7 370.9 637.5 371.8 636.6C372.8 635.8 374.3 634.4 375.3 633.7C378.6 631.3 380.8 629.7 383.0 628.0C386.1 625.6 391.0 622.3 391.5 622.3C391.9 622.3 426.4 605.1 427.7 604.2C428.2 603.9 429.4 603.4 430.4 603.0C431.4 602.7 433.0 602.0 433.9 601.5C435.7 600.6 437.2 600.0 444.0 597.5C446.1 596.7 449.0 595.6 450.4 595.0C451.8 594.5 454.1 593.6 455.5 593.0C456.9 592.4 459.2 591.5 460.6 591.0C462.0 590.4 464.1 589.6 465.2 589.1C466.4 588.7 468.6 587.7 470.2 586.9C471.8 586.1 473.8 585.2 474.5 585.0C476.2 584.4 488.5 578.3 490.8 576.9C493.9 574.9 496.1 573.6 499.0 572.0C502.9 569.9 517.5 559.9 519.7 557.9C520.3 557.3 521.4 556.4 522.0 556.0C522.6 555.6 524.6 553.8 526.4 552.1C528.2 550.4 529.8 549.0 530.0 549.0C530.6 549.0 539.6 540.0 541.0 538.0C541.7 537.0 543.0 535.4 544.0 534.5C545.0 533.6 546.3 532.0 547.0 531.0C547.7 530.0 548.6 528.9 549.0 528.5C549.4 528.1 550.3 527.0 551.0 526.0C551.8 525.0 553.1 523.2 554.0 522.0C556.8 518.3 564.9 506.2 566.0 504.0C566.6 502.8 567.5 501.2 568.0 500.5C569.2 498.8 579.1 478.9 580.1 476.2C580.6 475.1 581.4 473.0 582.0 471.5C583.7 467.3 585.9 460.8 587.0 457.0C589.2 449.3 591.0 442.1 591.0 441.0C591.0 440.4 591.2 439.0 591.5 438.0C591.8 437.0 592.0 435.2 592.0 434.0C592.0 432.8 592.2 431.0 592.5 430.0C593.2 427.3 593.2 405.7 592.5 403.0C592.2 402.0 592.0 400.4 592.0 399.6C592.0 398.7 591.8 397.0 591.5 395.9C591.3 394.8 590.8 392.6 590.5 391.0C588.6 381.2 584.2 368.1 579.8 358.7C578.9 356.6 577.9 354.5 577.8 354.0C577.5 352.8 574.1 346.0 573.0 344.5C572.5 343.8 571.4 341.8 570.6 340.1C569.7 338.4 568.5 336.2 567.8 335.0C567.1 333.9 565.8 331.9 565.0 330.5C564.2 329.1 562.8 326.9 562.0 325.5C561.2 324.1 559.8 321.9 559.0 320.5C557.1 317.2 544.5 298.3 541.0 293.5C539.5 291.5 536.4 287.0 534.0 283.5C531.6 280.0 528.9 276.2 528.0 275.0C527.1 273.8 524.8 270.7 523.0 268.0C521.1 265.3 518.5 261.5 517.0 259.5C507.6 246.5 493.9 225.9 491.8 221.7C491.3 220.7 490.5 219.2 490.0 218.5C488.8 216.8 478.9 196.9 477.9 194.2C477.4 193.1 476.6 191.0 476.0 189.5C472.4 180.7 467.0 161.0 467.0 156.8C467.0 156.3 466.8 155.0 466.5 154.0C466.2 152.8 466.0 150.5 466.0 147.5C466.0 144.5 465.8 142.2 465.5 141.0C465.2 140.0 465.0 137.7 465.0 136.0C465.0 134.3 465.2 132.0 465.5 131.0C465.8 129.9 466.0 127.7 466.0 125.5C466.0 123.3 466.2 121.1 466.5 120.0C466.8 119.0 467.0 117.7 467.0 117.2C467.0 115.3 470.3 101.3 471.4 98.6C471.8 97.6 472.5 95.7 473.1 94.3C473.6 93.0 474.4 90.9 474.9 89.8C477.7 82.4 484.8 69.9 490.0 63.0C490.9 61.8 492.1 60.2 492.7 59.3C493.3 58.5 495.5 56.0 497.6 53.8C499.8 51.6 502.0 49.1 502.6 48.2C503.2 47.4 504.4 46.2 505.2 45.6C506.1 45.0 508.0 43.4 509.3 42.1C510.7 40.8 512.5 39.3 513.3 38.8C514.2 38.2 515.1 37.4 515.5 37.0C518.1 34.1 532.6 25.3 542.8 20.5C545.8 19.2 549.2 17.7 550.5 17.3C551.8 16.9 553.3 16.4 553.8 16.1C556.7 14.6 571.9 11.0 575.2 11.0C576.3 11.0 578.0 10.8 579.0 10.5C581.2 9.9 594.5 9.8 596.3 10.4C597.0 10.5 598.8 10.8 600.3 11.0C612.0 12.2 633.2 21.1 638.5 27.0C638.9 27.4 640.0 28.3 641.0 29.0C643.2 30.5 646.5 33.8 648.3 36.3C653.1 42.9 656.2 47.9 656.8 50.0C657.0 50.5 657.5 51.8 658.0 53.1C659.4 56.1 661.0 62.4 661.0 64.5C661.0 65.4 661.2 67.0 661.5 68.0C661.8 69.0 662.0 71.0 662.0 72.5C662.0 74.0 661.8 76.0 661.5 77.0C661.2 78.0 661.0 79.4 661.0 80.0C660.9 92.1 644.6 110.0 633.7 110.0C632.7 110.0 631.0 110.2 629.8 110.5C627.5 111.1 626.5 111.0 620.0 109.4C610.3 107.0 602.9 99.3 599.0 87.5C596.3 79.1 590.1 73.3 582.8 72.0C581.9 71.9 580.2 71.6 579.1 71.3C577.4 70.9 576.6 70.9 575.1 71.3C574.0 71.5 572.1 71.8 570.8 72.0C566.6 72.6 562.5 73.9 556.7 76.7C554.1 77.9 552.9 78.7 547.0 83.0C544.7 84.6 539.5 89.9 537.7 92.3C531.3 101.1 528.2 106.8 526.2 113.0C523.8 120.8 523.0 123.8 523.0 125.0C523.0 125.6 522.8 127.0 522.5 128.0C522.1 129.4 522.0 131.9 522.0 138.5C522.0 145.1 522.1 147.6 522.5 149.0C522.8 150.0 523.0 151.5 523.0 152.3C523.0 156.3 526.0 167.2 529.8 177.1C530.9 179.9 537.3 192.8 539.1 195.8C541.3 199.4 552.2 215.6 554.0 218.0C555.7 220.2 557.3 222.3 559.7 225.7C560.4 226.7 561.5 227.9 562.0 228.5C562.9 229.5 564.1 231.0 566.9 235.0C567.7 236.0 568.6 237.1 569.0 237.5C569.4 237.9 570.3 239.0 571.0 240.0C571.7 241.0 572.8 242.4 573.5 243.0C574.2 243.6 575.3 245.0 576.0 246.0C576.7 247.0 577.8 248.4 578.5 249.0C579.2 249.6 580.3 251.0 581.0 252.0C581.7 253.0 583.0 254.6 584.0 255.5C585.0 256.4 586.3 258.0 587.0 259.0C587.7 260.0 588.6 261.1 589.0 261.5C589.4 261.9 590.3 263.0 591.0 264.0C591.7 265.0 593.0 266.6 594.0 267.5C595.0 268.4 596.3 270.0 597.0 271.0C597.7 272.0 598.8 273.4 599.5 274.0C600.2 274.6 601.3 276.0 602.0 277.0C602.7 278.0 603.6 279.1 604.0 279.5C604.4 279.9 605.2 280.8 605.8 281.7C606.3 282.5 607.6 284.1 608.6 285.2C609.7 286.3 611.0 287.9 611.7 288.8C612.3 289.7 613.3 291.1 613.9 291.9C614.5 292.8 615.7 294.1 616.5 295.0C617.3 295.8 618.6 297.3 619.3 298.3C621.6 301.5 623.3 303.8 625.0 306.0C627.8 309.7 637.9 324.8 639.0 327.0C639.6 328.2 640.5 329.8 641.0 330.5C641.5 331.2 642.9 333.7 644.0 336.0C645.1 338.3 646.5 340.8 647.0 341.5C648.2 343.2 651.4 349.8 652.0 351.5C652.2 352.2 652.9 353.7 653.4 354.8C653.9 355.8 654.7 357.6 655.1 358.8C655.6 359.9 656.4 362.0 656.9 363.3C657.5 364.7 658.4 367.0 659.0 368.5C661.9 375.8 662.6 378.0 666.4 392.5C667.6 397.4 668.8 402.6 669.0 403.8C669.3 406.2 669.6 408.0 670.4 411.8C670.6 412.9 670.9 416.0 671.0 418.7C671.1 421.3 671.4 424.0 671.6 424.7C672.2 426.6 672.1 452.7 671.5 455.0C671.2 456.0 671.0 458.0 671.0 459.5C671.0 461.0 670.8 463.0 670.5 464.0C670.2 465.0 670.0 466.6 670.0 467.4C670.0 468.3 669.8 470.0 669.5 471.1C669.3 472.2 668.8 474.4 668.5 476.0C665.9 489.3 660.6 506.2 655.8 516.3C654.9 518.4 653.9 520.5 653.8 521.0C653.5 522.2 650.1 529.0 649.0 530.5C648.5 531.2 647.3 533.3 646.4 535.2C644.6 538.6 643.6 540.3 639.8 546.4C637.1 550.7 636.3 551.9 633.1 556.4C628.9 562.3 628.0 563.4 626.4 565.2C625.5 566.1 624.3 567.5 623.7 568.3C623.2 569.2 621.7 570.8 620.5 572.0C619.3 573.2 617.8 574.8 617.3 575.7C615.8 577.8 613.1 580.5 611.0 582.0C610.0 582.7 607.5 585.0 605.5 587.0C603.5 589.0 601.2 591.2 600.3 591.7C599.5 592.3 598.3 593.3 597.7 593.9C597.0 594.5 595.7 595.6 594.7 596.3C591.3 598.7 589.2 600.3 587.0 602.0C583.4 604.8 573.0 611.5 569.9 613.0C568.8 613.6 567.2 614.5 566.5 615.0C565.0 616.0 556.2 620.5 555.0 620.8C554.5 620.9 552.9 621.6 551.3 622.3C542.4 626.4 529.5 630.5 519.0 632.5C517.4 632.8 515.5 633.2 514.7 633.4C513.8 633.6 512.2 633.9 511.0 634.0C509.8 634.2 508.0 634.4 507.0 634.6C506.0 634.8 504.3 635.1 503.2 635.3C502.1 635.5 500.1 635.8 498.8 636.0C497.6 636.2 496.0 636.5 495.3 636.7C494.7 636.8 493.7 637.0 493.1 637.0C492.5 637.0 491.0 637.2 489.9 637.5C488.8 637.7 486.6 638.2 485.0 638.5C470.9 641.3 451.7 647.1 441.7 651.7C440.1 652.4 438.5 653.1 438.0 653.2C436.2 653.7 421.8 661.1 418.4 663.3C411.3 667.9 405.4 672.0 404.5 673.0C404.1 673.4 403.2 674.2 402.3 674.8C401.5 675.3 399.5 677.1 397.8 678.6C396.2 680.2 394.1 682.0 393.2 682.6C392.4 683.2 391.2 684.4 390.6 685.2C390.0 686.1 388.0 688.4 386.1 690.3C384.3 692.3 382.4 694.4 382.0 695.0C381.6 695.6 380.7 696.7 380.1 697.3C378.1 699.5 372.1 708.1 369.0 713.5C368.2 714.9 366.9 716.9 366.2 718.1C364.6 720.6 360.6 728.7 360.0 730.5C359.8 731.2 358.9 733.2 358.1 734.8C355.3 740.5 350.2 755.4 347.6 765.5C345.5 774.2 345.1 775.0 343.8 775.6C342.7 776.1 339.1 776.1 337.8 775.5Z"/><g id="istr" fill="none" stroke="currentColor"></g></svg>
 <button id="isnd" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>Tap for sound</button>
 <button id="iskip" type="button">Skip</button></div>
 <header><b class="lg">ORPHEUS</b><span id="clk"></span><span id="stat">SYS ONLINE</span>
-<button id="bf">+Files</button><button id="bd">+Folder</button><button id="bm" title="More options (or right-click anywhere)">⋯</button><button id="bdl" title="Get the Windows app">⬇ Windows app</button>
+<button id="bf">+Files</button><button id="bd">+Folder</button><button id="bplus" title="Add music" aria-label="Add music"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button id="bm" title="More options (or right-click anywhere)" aria-label="More"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button><button id="bdl" title="Get the Windows app">⬇<span class="hm"> Windows app</span></button>
 <span id="wc"><button id="wmin" title="Minimize">—</button><button id="wfs" title="Fullscreen / Windowed (F11)">⛶</button><button id="wx" title="Exit (Ctrl+Q)">✕</button></span></header>
 <main id="m">
-<section class="pn side"><div class="tabs" id="lt"></div><div class="sc" id="ll"></div></section>
+<section class="pn side" id="L"><h2 class="vt">Library</h2><div class="tabs" id="lt"></div><div class="sc" id="ll"></div></section>
 <section class="pn" id="C">
+<div id="npt"><button id="npc" aria-label="Close"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><span>NOW PLAYING</span><button id="npm" aria-label="More"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
 <div id="top"><div id="dw"><canvas id="dial"></canvas><div id="art"><img id="im" alt=""><span id="ph">NO SIGNAL</span></div></div><div id="inf"><div id="ti">STANDBY</div><div id="ar">Load music to begin</div><div id="tm">0:00 / 0:00</div></div></div>
-<canvas id="vz"></canvas><canvas id="wf"></canvas><div id="rl2"><i id="mk">▼</i></div><div id="gs"><canvas class="g"></canvas><canvas class="g"></canvas><canvas class="g"></canvas></div>
+<canvas id="vz"></canvas><canvas id="wf"></canvas><div id="rl2"><i id="mk">▼</i></div><div id="tms"><span id="t1">0:00</span><span id="t2">-0:00</span></div><div id="gs"><canvas class="g"></canvas><canvas class="g"></canvas><canvas class="g"></canvas></div>
 <div id="ctl"><button id="pv">⏮</button><button id="pp">▶</button><button id="nx">⏭</button><span>VOL</span><input type="range" id="vol" min="0" max="1" step=".01"></div>
-<div class="sc" id="ly"></div></section>
-<section class="pn side"><div class="tabs" id="rt"></div><div class="sc" id="rr"></div></section>
+<div id="npa"><button id="nsh"><i>⇄</i><small>Shuffle</small></button><button id="nlk"><i>♡</i><small>Like</small></button><button id="nq"><i>☰</i><small>Queue</small></button><button id="nrp"><i>↻</i><small>Repeat</small></button></div>
+</section>
+<section class="pn side" id="R"><h2 class="vt">Settings</h2><div class="tabs" id="rt"></div><div class="sc" id="rr"></div></section>
 </main>
+<div id="cmb"></div>
+<div id="mini"><i id="mpg"></i><div id="mi"><span id="mth"><img id="mimg" alt=""><b>♫</b></span><span id="mtx"><b id="mt">STANDBY</b><small id="ma">Load music to begin</small></span></div><button id="mpp" aria-label="Play / pause">▶</button><button id="mnx" aria-label="Next">⏭</button></div>
+<nav id="nav"><button data-v="lib"><i>☰</i><span>Library</span></button><button data-v="player"><i>♫</i><span>Now Playing</span></button><button data-v="set"><i>⚙</i><span>Settings</span></button></nav>
 <div id="cm"></div>
-<input type="file" id="fi" multiple accept="audio/*,.lrc,.mp3,.flac,.m4a,.ogg,.wav,.opus,.aac" hidden>
+<input type="file" id="fi" multiple accept="audio/*,.mp3,.flac,.m4a,.ogg,.wav,.opus,.aac" hidden>
 <input type="file" id="fd" webkitdirectory multiple hidden>
 <input type="file" id="fbg" accept="image/*" hidden><input type="file" id="fart" accept="image/*" hidden>
 <script>
 const $=s=>document.querySelector(s),h=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const B=(x,f,t)=>{const e=h('button','',x);e.onclick=f;if(t)e.title=t;return e};
 const APP=window.orpheus;if(APP)document.body.classList.add('app');
-const coarse=matchMedia('(pointer:coarse)').matches;
+const PHQ='(max-width:959px),(pointer:coarse) and (max-height:520px)',coarse=matchMedia('(pointer:coarse)').matches,isAnd=/Android/i.test(navigator.userAgent);
 let st={};try{st=JSON.parse(localStorage.getItem('orpheus')||'{}')}catch{}
 const F=[31,62,125,250,500,1000,2000,4000,8000,16000];
 const PR={Flat:[0,0,0,0,0,0,0,0,0,0],Rock:[4,3,2,0,-1,-1,1,3,4,4],Jazz:[3,2,1,2,-2,-2,0,1,2,3],Pop:[-1,1,3,4,3,0,-1,-1,1,2],Classical:[4,3,2,1,-1,-1,0,2,3,4]};
-const D={a:'#e6e6e6',vc:'#e6e6e6',sp:1,r:'12px',rv:1,xf:0,eq:Array(10).fill(0),bass:0,tre:0,voc:0,sur:0,rev:0,mono:0,vr:0,ai:1,aif:1,ail:0,vrk:1,vrw:.6,vrc:0,bal:0,norm:0,vol:.8,rate:1,sh:0,rp:0,amb:1,prof:{},keys:{play:' ',next:'ArrowRight',prev:'ArrowLeft',mute:'m',fav:'f',focus:'z',vocal:'v'}};
-const cfg={...D,...st.cfg};cfg.keys={...D.keys,...cfg.keys};cfg.vr=0;const MODK=['Alt','AltGraph','Control','Shift','Meta','CapsLock','ContextMenu','OS'];for(const k in D.keys)if(MODK.includes(cfg.keys[k]))cfg.keys[k]=D.keys[k];
-/* one-time migration: visitors with an old saved 2px (sharp) default get the new round default; their later choices are kept */
-if(st.cfg&&st.cfg.rv!==1)cfg.r=D.r;cfg.rv=1;
-let fav=new Set(st.fav||[]),pl=st.pl||{},hist=st.hist||[],plSel='',T=[],Q=[],qi=-1,tab='lib',rtab='aud',cur=0,U=[],pkv=[],pkId=0,lines=[],li=-1,xfing=0,slEnd=0,slT,listen=null,muted=0,artU='',bgU='',lq='',impTxt='',fsState=true;
+const D={a:'#e6e6e6',vc:'#e6e6e6',sp:1,r:'12px',xf:0,eq:Array(10).fill(0),bass:0,tre:0,voc:0,sur:0,rev:0,mono:0,bal:0,norm:0,vol:.8,rate:1,sh:0,rp:0,amb:1,prof:{},keys:{play:' ',next:'ArrowRight',prev:'ArrowLeft',mute:'m',fav:'f',focus:'z'}};
+const cfg={...D,...st.cfg};cfg.keys={...D.keys,...cfg.keys};if(cfg.v!=3){cfg.r=D.r;cfg.v=3} /* v3: Round buttons are the new default */
+let fav=new Set(st.fav||[]),pl=st.pl||{},hist=st.hist||[],plSel='',T=[],Q=[],qi=-1,tab='lib',rtab='aud',cur=0,U=[],pkv=[],pkId=0,xfing=0,slEnd=0,slT,listen=null,muted=0,artU='',bgU='',lq='',impTxt='',fsState=true;
 const tm=new Map(),tr=id=>tm.get(id);
 const col=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'}),srt=(a,b)=>col.compare(a.ti,b.ti);
 const save=()=>{try{localStorage.setItem('orpheus',JSON.stringify({cfg,fav:[...fav],pl,hist,q:Q,last:Q[qi]}))}catch{}};
@@ -239,53 +347,7 @@ const E=[new Audio(),new Audio()],G=[AC.createGain(),AC.createGain()],bus=AC.cre
 E.forEach((e,i)=>{AC.createMediaElementSource(e).connect(G[i]);G[i].connect(bus);e.onerror=()=>{if(e.src)flash("CAN'T PLAY THIS FILE (FORMAT?)")};e.onended=()=>{if(e===E[cur]&&!xfing){const j=nextI(1);if(j>=0)load(j,0)}}});
 const bass=bq('lowshelf',120),eq=F.map(f=>bq('peaking',f)),tre=bq('highshelf',8000),voc=bq('peaking',2800);
 let n0=bus;[bass,...eq,tre,voc].forEach(n=>{n0.connect(n);n0=n});
-const mono=AC.createGain();mono.channelCountMode='explicit';
-/* vocal remover (karaoke): the lead vocal sits in the centre of the stereo image, so subtracting L-R cancels it.
-   Below ~180 Hz the original is kept (bass + kick are also centred but carry almost no voice), so the track doesn't turn thin. */
-const vrCl=AC.createGain(),vrW=AC.createGain(),vrCut=bq('peaking',1800),vrIn=AC.createGain(),vrOut=AC.createGain(),vrHd=AC.createGain(),vrKg=AC.createGain(),vrSp=AC.createChannelSplitter(2),vrSum=AC.createGain(),vrP=AC.createGain(),vrN=AC.createGain();
-{const f=(t,hz)=>{const a=bq(t,hz),b=bq(t,hz);a.Q.value=b.Q.value=.7071;a.connect(b);return[a,b]};
-const lp=f('lowpass',180),hp=f('highpass',180);
-vrIn.connect(vrCl);vrCl.connect(lp[0]);lp[1].connect(vrOut);
-vrCl.connect(hp[0]);hp[1].connect(vrHd);vrHd.connect(vrOut);
-hp[1].connect(vrSp);vrP.gain.value=Math.SQRT1_2;vrN.gain.value=-Math.SQRT1_2;
-vrSum.channelCount=1;vrSum.channelCountMode='explicit';
-vrSp.connect(vrP,0);vrSp.connect(vrN,1);vrP.connect(vrSum);vrN.connect(vrSum);vrSum.connect(vrKg);vrKg.connect(vrOut)}
-vrCut.Q.value=.6;vrOut.connect(vrCut);vrCut.connect(mono);vrIn.connect(vrW);
-/* smart mode: spectral processor in vocal-worklet.js; until it loads (or if it can't), the classic L-R path above is used */
-let wk=null,wkTried=0;
-const wkLoad=()=>{if(wkTried)return;wkTried=1;try{AC.audioWorklet.addModule('vocal-worklet.js').then(()=>{wk=new AudioWorkletNode(AC,'orpheus-vocal',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:'explicit'});vrW.connect(wk);wk.connect(vrOut);ap();if(typeof rr=='function')rr()}).catch(()=>{})}catch{}};
-/* AI vocal removal: sep-worker.js turns a song into an instrumental WAV once; it is cached and then played instead of the original */
-const K=[0,0],ins=new Map(),insU=new Map(),insAuto=new Set();let aiBad=0,aiLastVr=0,aiPill=null,aiT0=0,insQ=[],insBusy=0,insId='',aiTxt='',aiW=null,aiRej=null,aiEp='';
-function aiUi(t,err){aiTxt=err?'':t;if(!aiPill){aiPill=document.createElement('div');aiPill.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99999;max-width:min(92vw,560px);padding:10px 16px;border-radius:10px;background:rgba(10,14,20,.92);color:#fff;font:600 13px/1.5 system-ui,sans-serif;border:1px solid rgba(255,255,255,.25);cursor:pointer;display:none;text-align:center;white-space:pre-line';aiPill.title='click to hide';aiPill.onclick=()=>aiPill.style.display='none';document.body.append(aiPill)}
-aiPill.style.borderColor=err?'#ff5c5c':'rgba(255,255,255,.25)';aiPill.textContent=t;aiPill.style.display=t?'block':'none'}
-const insUrl=id=>{let u=insU.get(id);if(!u){u=URL.createObjectURL(ins.get(id));insU.set(id,u)}return u};
-function wav16(L,R){const n=L.length,b=new ArrayBuffer(44+n*4),v=new DataView(b),w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
-w(0,'RIFF');v.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,2,true);v.setUint32(24,44100,true);v.setUint32(28,176400,true);v.setUint16(32,4,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*4,true);
-const o=new Int16Array(b,44),c=x=>x<-1?-32768:x>1?32767:x*32767|0;for(let i=0;i<n;i++){o[2*i]=c(L[i]);o[2*i+1]=c(R[i])}return new Blob([b],{type:'audio/wav'})}
-function syncSrc(){const id=Q[qi],t=id&&tr(id);if(!t)return;const n=cur,e=E[n],want=cfg.vr&&cfg.ai&&ins.has(id)?1:0;if(want===K[n])return;K[n]=want;
-const t0=e.currentTime,pl=!e.paused;e.src=want?insUrl(id):(U[n]||t.url);e.playbackRate=cfg.rate;e.addEventListener('loadedmetadata',()=>{try{e.currentTime=t0}catch{}if(pl)playE(e)},{once:true})}
-function aiAdd(id,front,auto){if(!auto)aiBad=0;if(aiBad&&auto)return;if(ins.has(id)||id===insId||!tr(id))return;if(auto)insAuto.add(id);else insAuto.delete(id);const i=insQ.indexOf(id);if(i>=0){if(front&&i>0){insQ.splice(i,1);insQ.unshift(id)}}else if(front)insQ.unshift(id);else insQ.push(id);aiRun()}
-function aiPlan(){if(cfg.vr!==aiLastVr){aiLastVr=cfg.vr;if(cfg.vr)aiBad=0}if(!(cfg.vr&&cfg.ai)||aiBad||qi<0||!Q.length)return;const c=Q[qi],nx=Q[(qi+1)%Q.length];
-if(insBusy&&insId&&insId!==c&&insId!==nx&&insAuto.has(insId)&&aiRej){aiW&&aiW.terminate();aiW=null;aiRej(new Error('cancel'))}
-if(nx&&nx!==c)aiAdd(nx,0,1);aiAdd(c,1,1)}
-function aiDel(id){const u=insU.get(id);if(u)URL.revokeObjectURL(u);insU.delete(id);ins.delete(id);tx('readwrite',s=>s.delete('\u0001in'+id));if(Q[qi]===id){K[cur]=1;syncSrc()}}
-async function aiRun(){if(insBusy)return;insBusy=1;try{
-if(location.protocol=='file:'){aiBad=1;insQ=[];aiUi('AI vocal removal cannot run from a local file (file://). Use the Windows app, or put the site on a web host / local web server. The live filter is used instead.',1);return}
-try{for(const f of['models/'+(cfg.aif?'vocal-fast.onnx':'vocal.onnx'),'sep-worker.js','vendor/ort/ort.min.js']){const r=await fetch(f,{method:'HEAD',cache:'no-store'});if(!r.ok)throw f}}
-catch(f){aiBad=1;insQ=[];aiUi('AI files are missing on this site ('+f+'). Upload sep-worker.js and the models/ and vendor/ folders next to index.html (run: node setup-ai.js). The live filter is used instead.',1);return}
-while(insQ.length){const id=insQ.shift();if(ins.has(id)||!tr(id))continue;insId=id;
-try{await aiMake(id)}catch(e){if(e&&e.message=='cancel')continue;aiBad=1;aiUi('AI vocal removal failed: '+(e&&e.message||e)+'. The live filter is used instead.',1);insQ=[];break}finally{insId=''}}}
-finally{insBusy=0;aiTxt='';if(!aiBad&&aiPill&&!/ready/.test(aiPill.textContent))aiUi('');if(aiW){aiW.terminate();aiW=null}}}
-async function aiMake(id){const t=tr(id);aiT0=Date.now();aiUi('AI vocal removal: preparing “'+t.ti+'”…');
-const ab=t.blob?await t.blob.arrayBuffer():await(await fetch(t.url)).arrayBuffer();
-const buf=await new OfflineAudioContext(2,1,44100).decodeAudioData(ab),L=buf.getChannelData(0).slice(),R=(buf.numberOfChannels>1?buf.getChannelData(1):buf.getChannelData(0)).slice();
-const out=await new Promise((ok,no)=>{aiRej=no;if(!aiW)aiW=new Worker('sep-worker.js');const w=aiW;
-w.onmessage=e=>{const d=e.data;if(d.type=='progress'){const el=(Date.now()-aiT0)/1000,left=el/d.p*(1-d.p);aiUi('AI vocal removal '+Math.round(d.p*100)+'%'+(d.p<1?' · about '+(left>90?Math.round(left/60)+' min':Math.round(left)+' s')+' left':'')+(aiEp?' · '+aiEp:'')+(insQ.length?' · +'+insQ.length+' queued':'')+'\n“'+t.ti+'” keeps playing with the live filter until it is ready')}else if(d.type=='info')aiEp=d.ep=='webgpu'?'GPU':'CPU';else if(d.type=='done')ok(d);else if(d.type=='error')no(new Error(d.msg))};
-w.onerror=()=>no(new Error('could not start (model or engine files missing?)'));w.postMessage({type:'run',L,R,kind:cfg.aif?'fast':'best',low:!!cfg.ail},[L.buffer,R.buffer])});
-aiRej=null;const blob=wav16(out.L,out.R);ins.set(id,blob);tx('readwrite',s=>s.put({id:'\u0001in'+id,blob}));aiUi('Instrumental ready ✓ '+t.ti);setTimeout(()=>{if(aiPill&&/ready/.test(aiPill.textContent))aiUi('')},4000);ap()}
-let vrOn=-1;
-const vrRoute=on=>{if(on===vrOn)return;vrOn=on;try{n0.disconnect(mono)}catch{}try{n0.disconnect(vrIn)}catch{}
-if(on)n0.connect(vrIn);else n0.connect(mono)};
+const mono=AC.createGain();mono.channelCountMode='explicit';n0.connect(mono);
 const mix=AC.createGain(),cv=AC.createConvolver(),rv=AC.createGain(),sp=AC.createChannelSplitter(2),mg=AC.createChannelMerger(2),sg=AC.createGain();
 {const l=AC.sampleRate*2.2|0,b=AC.createBuffer(2,l,AC.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<l;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/l,3)}cv.buffer=b}
 mono.connect(mix);mono.connect(cv);cv.connect(rv);rv.connect(mix);mono.connect(sp);
@@ -294,7 +356,7 @@ mg.connect(sg);sg.connect(mix);
 const pan=AC.createStereoPanner(),comp=AC.createDynamicsCompressor(),master=AC.createGain(),an=AC.createAnalyser();an.fftSize=256;
 mix.connect(pan);pan.connect(comp);comp.connect(master);master.connect(an);an.connect(AC.destination);
 const fd=new Uint8Array(128);
-function ap(){if(cfg.vr)wkLoad();try{syncSrc();aiPlan()}catch{}vrRoute(cfg.vr&&!K[cur]?1:0);{const t=AC.currentTime;vrKg.gain.setTargetAtTime(cfg.vr?cfg.vrk:0,t,.03);vrHd.gain.setTargetAtTime(cfg.vr?1-cfg.vrk:1,t,.03);vrCl.gain.value=wk?0:1;vrW.gain.value=wk?1:0;vrCut.gain.setTargetAtTime(cfg.vr?-cfg.vrc:0,t,.05);if(wk){wk.parameters.get('k').value=cfg.vrk;wk.parameters.get('t').value=.9-.5*cfg.vrw}}eq.forEach((n,i)=>n.gain.value=cfg.eq[i]);bass.gain.value=cfg.bass;tre.gain.value=cfg.tre;voc.gain.value=cfg.voc;sg.gain.value=cfg.sur;rv.gain.value=cfg.rev;mono.channelCount=cfg.mono?1:2;pan.pan.value=cfg.bal;comp.threshold.value=cfg.norm?-26:0;comp.ratio.value=cfg.norm?5:1;master.gain.value=muted?0:cfg.vol;E.forEach(e=>e.playbackRate=cfg.rate);$('#vol').value=cfg.vol}
+function ap(){eq.forEach((n,i)=>n.gain.value=cfg.eq[i]);bass.gain.value=cfg.bass;tre.gain.value=cfg.tre;voc.gain.value=cfg.voc;sg.gain.value=cfg.sur;rv.gain.value=cfg.rev;mono.channelCount=cfg.mono?1:2;pan.pan.value=cfg.bal;comp.threshold.value=cfg.norm?-26:0;comp.ratio.value=cfg.norm?5:1;master.gain.value=muted?0:cfg.vol;E.forEach(e=>e.playbackRate=cfg.rate);$('#vol').value=cfg.vol}
 function th(){const s=document.documentElement.style;s.setProperty('--a',cfg.a);s.setProperty('--vc',cfg.vc);s.setProperty('--sp',cfg.sp);s.setProperty('--r',cfg.r);document.body.classList.toggle('noamb',!cfg.amb)}
 /* ID3v2.3/2.4 tags: title, artist, cover */
 const txt=d=>{const e=d[0],b=d.slice(1);return new TextDecoder(e==1?'utf-16le':e==2?'utf-16be':e==3?'utf-8':'windows-1252').decode(b).replace(/[\0﻿]/g,'').trim()};
@@ -307,39 +369,31 @@ if(id=='TIT2')r.ti=txt(d);if(id=='TPE1')r.ar=txt(d);
 if(id=='APIC'){const e=d[0];let i=1;while(d[i])i++;i+=2;if(e==1||e==2){while(d[i]||d[i+1])i+=2;i+=2}else{while(d[i])i++;i++}r.art=new Blob([d.slice(i)],{type:'image/jpeg'})}}}catch{}return r}
 const AUD=/\.(mp3|m4a|flac|wav|ogg|opus|aac|webm)$/i;
 async function add(files,play){files=[...files];const lr={},key=f=>(f.webkitRelativePath||f.name).replace(/\.[^.\/\\]+$/,'');
-for(const f of files)if(/\.lrc$/i.test(f.name))lr[key(f)]=await f.text();
 const au=files.filter(f=>f.type.startsWith('audio')||AUD.test(f.name)),ids=[];let n=0;
 for(const f of au){impTxt=au.length>3?'IMPORT '+(++n)+'/'+au.length:'';const k=key(f),id=f.name+'|'+f.size;ids.push(id);
-let t=tr(id);if(t){if(lr[k]){t.lrc=lr[k];put(t)}continue}
+let t=tr(id);if(t)continue;
 const m=await id3(f),base=f.name.replace(/\.[^.]+$/,'');let ti=m.ti,ar=m.ar;
 if(!ti){const g=base.match(/^(.+?)\s+-\s+(.+)$/);if(g){ar=ar||g[1];ti=g[2]}else ti=base}
-t={id,ti,ar:ar||'Unknown',blob:f,art:m.art,lrc:lr[k]};T.push(t);tm.set(id,t);Q.push(id);await put(t)}
+t={id,ti,ar:ar||'Unknown',blob:f,art:m.art};T.push(t);tm.set(id,t);Q.push(id);await put(t)}
 impTxt='';T.sort(srt);sv();rl();if(qi<0&&Q.length)load(0,0,false);if(play&&ids.length)pk(ids[0])}
 /* playback */
 const fm=s=>isFinite(s)?(s/60|0)+':'+String(s%60|0).padStart(2,'0'):'0:00';
 function nextI(auto){if(!Q.length)return -1;if(cfg.rp==2&&auto)return qi;if(cfg.sh&&Q.length>1){let j;do j=Math.random()*Q.length|0;while(j==qi);return j}let j=qi+1;if(j>=Q.length){if(cfg.rp||!auto)j=0;else return -1}return j}
-function lrc(s){const o=[];(s||'').split(/\r?\n/).forEach(l=>{const x=l.replace(/\[[^\]]*\]/g,'').trim();[...l.matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)].forEach(a=>o.push([+a[1]*60+ +a[2],x]))});return o.sort((a,b)=>a[0]-b[0])}
 /* waveform peaks are computed once, then cached in IndexedDB */
 async function wave(t){if(t.pk)return t.pk;try{if((t.blob?t.blob.size:t.size)>(coarse?25e6:90e6))throw 0;const b=await AC.decodeAudioData(t.blob?await t.blob.arrayBuffer():await(await fetch(t.url)).arrayBuffer()),d=b.getChannelData(0),n=240,s=Math.floor(d.length/n),step=Math.max(1,s/200|0),p=[];
 for(let i=0;i<n;i++){let m=0;for(let j=0;j<s;j+=step)m=Math.max(m,Math.abs(d[i*s+j]));p.push(+m.toFixed(3))}t.pk=p;tx('readwrite',x=>x.put({id:'\u0001pk'+t.id,pk:p}))}catch{return Array(240).fill(.15)}return t.pk}
 function showArt(t){if(artU)URL.revokeObjectURL(artU);artU=t.art?URL.createObjectURL(t.art):'';$('#im').src=artU;$('#im').style.display=artU?'block':'none';$('#ph').style.display=artU?'none':''}
-const setTi=()=>{const t=tr(Q[qi]);$('#ti').textContent=t?(fav.has(t.id)?'♥ ':'')+t.ti:'STANDBY'};
+const setTi=()=>{const t=tr(Q[qi]);$('#ti').textContent=t?(fav.has(t.id)?'♥ ':'')+t.ti:'STANDBY';$('#mt').textContent=$('#ti').textContent;document.body.classList.toggle('nomini',!t)};
 async function load(i,fade,go=true){const t=tr(Q[i]);if(!t)return;AC.resume();
 const o=cur,n=fade?1-cur:cur,e=E[n],now=AC.currentTime,d=fade?Math.max(cfg.xf,.1):.03;
-if(U[n])URL.revokeObjectURL(U[n]);U[n]=t.blob?URL.createObjectURL(t.blob):null;K[n]=cfg.vr&&cfg.ai&&ins.has(t.id)?1:0;e.src=K[n]?insUrl(t.id):(U[n]||t.url);e.playbackRate=cfg.rate;
+if(U[n])URL.revokeObjectURL(U[n]);U[n]=t.blob?URL.createObjectURL(t.blob):null;e.src=U[n]||t.url;e.playbackRate=cfg.rate;
 G[n].gain.cancelScheduledValues(now);G[n].gain.setValueAtTime(0,now);G[n].gain.linearRampToValueAtTime(1,now+d);
 if(fade){G[o].gain.cancelScheduledValues(now);G[o].gain.setValueAtTime(1,now);G[o].gain.linearRampToValueAtTime(0,now+d);const oe=E[o];setTimeout(()=>{if(oe!==E[cur])oe.pause()},d*1000+80)}else E[1-n].pause();
-cur=n;qi=i;xfing=0;if(go)playE(e);ap();
+cur=n;qi=i;xfing=0;if(go)playE(e);
 setTi();$('#ar').textContent=t.ar;document.title=t.ti+' · ORPHEUS';showArt(t);
-try{if(navigator.mediaSession)navigator.mediaSession.metadata=new MediaMetadata({title:t.ti,artist:t.ar,artwork:artU?[{src:artU}]:[]})}catch{}
-lyr(t);
+try{if(navigator.mediaSession)navigator.mediaSession.metadata=new MediaMetadata({title:t.ti,artist:t.ar,artwork:artU?[{src:artU,sizes:'512x512',type:'image/jpeg'}]:[{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]})}catch{}
 if(go){hist.unshift({id:t.id,ts:Date.now()});hist.length=Math.min(hist.length,500)}
-if(window.liveNP)liveNP();pkv=[];pkId++;const my=t.id;wave(t).then(p=>{if(Q[qi]==my){pkv=p;pkId++}});sv();mark()}
-/* lyrics: inline text (browser mode) or a .lrc file next to the song (read from disk; UTF-8 or Windows-1256 for Persian) */
-async function lyr(t){let s=t.lrc;lines=[];li=-1;const L=$('#ly');L.textContent='';
-if(s==null&&t.lrcPath){try{const b=await(await fetch(mU(t.lrcPath))).arrayBuffer();try{s=new TextDecoder('utf-8',{fatal:true}).decode(b)}catch{s=new TextDecoder('windows-1256').decode(b)}t.lrc=s}catch{s=''}}
-if(Q[qi]!=t.id)return;lines=lrc(s);L.textContent='';
-if(!lines.length)L.append(h('div','','NO LYRICS — put a .lrc file with the same name next to the song'));else{const f=document.createDocumentFragment();lines.forEach(l=>f.append(h('div','',l[1]||'♪')));L.append(f)}}
+pkv=[];pkId++;const my=t.id;wave(t).then(p=>{if(Q[qi]==my){pkv=p;pkId++}});sv();mark()}
 const go=d=>{if(!Q.length)return APP?APP.pickFolder():$('#fi').click();const e=E[cur];if(d<0){if(e.currentTime>3)e.currentTime=0;else load((qi-1+Q.length)%Q.length,0)}else{const j=nextI(0);if(j>=0)load(j,0)}};
 const tg=()=>{if(qi<0)return APP?APP.pickFolder():$('#fi').click();const e=E[cur];e.paused?playE(e):e.pause()};
 const mute=()=>{muted=!muted;ap()};
@@ -355,7 +409,7 @@ $('#vol').oninput=e=>{cfg.vol=+e.target.value;muted=0;ap();sv()};
 $('#bf').onclick=()=>APP?APP.pickFiles():$('#fi').click();$('#bd').onclick=()=>APP?APP.pickFolder():$('#fd').click();
 $('#fi').onchange=e=>{add(e.target.files);e.target.value=''};$('#fd').onchange=e=>{add(e.target.files);e.target.value=''};
 addEventListener('dragover',e=>e.preventDefault());addEventListener('drop',e=>{e.preventDefault();const fl=[...e.dataTransfer.files];if(!fl.length)return;if(APP)APP.addPaths(fl.map(f=>APP.pathFor(f)).filter(Boolean));else add(fl)});
-$('#wf').onclick=e=>{const el=E[cur],r=e.target.getBoundingClientRect();if(el.duration)el.currentTime=el.duration*(e.clientX-r.left)/r.width};
+{const w=$('#wf'),sk=e=>{const el=E[cur],r=w.getBoundingClientRect();if(el.duration)el.currentTime=el.duration*Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))};w.onpointerdown=e=>{try{w.setPointerCapture(e.pointerId)}catch{}w._d=1;sk(e)};w.onpointermove=e=>{if(w._d)sk(e)};w.onpointerup=w.onpointercancel=()=>{w._d=0}}
 /* desktop (Electron) window controls */
 if(APP){$('#wmin').onclick=()=>APP.minimize();$('#wfs').onclick=()=>APP.fullscreen();$('#wx').onclick=()=>APP.quit();
 APP.onFullscreen(v=>fsState=v);APP.isFullscreen().then(v=>fsState=v);
@@ -376,11 +430,11 @@ function upsert(list,init){
    if(c&&c.key==key)t=c;else{t={id,disk:1,key,size:e.size,...nm(id)};jobs.push(t)}
    t.url=mU(id);T.push(t);tm.set(id,t);Q.push(id)}
   else if(t.key!=key){t.key=key;t.size=e.size;t.pk=null;pkId++;jobs.push(t)}
-  if(t.lrcPath!=e.lrc){t.lrcPath=e.lrc||null;t.lrc=undefined;if(Q[qi]==id)lyr(t)}}
+   }
  T.sort(srt);runJobs();if(init)return;sv();if(qi<0&&Q.length)load(0,0,false);rl()}
 if(APP)APP.onUpdate(d=>{if(d.folders)folders=d.folders;(d.remove||[]).forEach(id=>{if(tr(id))del(id,1)});if(d.add&&d.add.length)upsert(d.add);else rl()});
 /* HUD dial + gauges */
-const cvz=$('#vz'),cwf=$('#wf'),cdial=$('#dial'),cg=[...document.querySelectorAll('.g')],eTm=$('#tm'),ePP=$('#pp'),eMk=$('#mk'),eSt=$('#stat'),eLy=$('#ly'),docEl=document.documentElement;
+const cvz=$('#vz'),cwf=$('#wf'),cdial=$('#dial'),cg=[...document.querySelectorAll('.g')],eTm=$('#tm'),ePP=$('#pp'),eMk=$('#mk'),eSt=$('#stat'),eMpp=$('#mpp'),eC=$('#C'),eTi=$('#ti'),eAr=$('#ar'),eMt=$('#mt'),eMa=$('#ma'),eMimg=$('#mimg'),eMpg=$('#mpg'),eT1=$('#t1'),eT2=$('#t2'),eNsh=$('#nsh'),eNrp=$('#nrp'),eNlk=$('#nlk'),eNrpI=$('#nrp i'),eNlkI=$('#nlk i'),docEl=document.documentElement;
 let rot=0;
 function cs(c){const r=devicePixelRatio||1,w=c.clientWidth*r|0,hh=c.clientHeight*r|0;if(c.width!=w||c.height!=hh){c.width=w;c.height=hh}return c.getContext('2d')}
 function dial(pr,bs){const c=cdial,x=cs(c),W=c.width,m=W/2,R=m*.94,lw=Math.max(1,W/400),A=cfg.a;rot+=.004*cfg.sp;x.clearRect(0,0,W,W);x.save();x.translate(m,m);x.strokeStyle=x.fillStyle=A;
@@ -401,31 +455,38 @@ function fr(){requestAnimationFrame(fr);if(document.hidden)return;fc++;
 const e=E[cur];an.getByteFrequencyData(fd);let b=0;for(let i=0;i<6;i++)b+=fd[i];
 if(e.paused&&b==0&&fc%6)return; // idle: redraw at ~10fps
 const bs=b/1530,bv=Math.round(bs*50)/50;if(bv!==lastBass){lastBass=bv;docEl.style.setProperty('--bass',bv)}
+tt(eMpp,e.paused?'▶':'⏸');const pl0=!e.paused;if(document.body._p!==pl0){document.body._p=pl0;document.body.classList.toggle('isplay',pl0)}
+tt(eMt,eTi.textContent);tt(eMa,eAr.textContent);if(eMimg._s!==artU){eMimg._s=artU;if(artU)eMimg.src=artU;else eMimg.removeAttribute('src');eMimg.style.display=artU?'block':'none'}
+{const w0=((e.duration?e.currentTime/e.duration:0)*100).toFixed(1)+'%';if(eMpg._w!==w0){eMpg._w=w0;eMpg.style.width=w0}}
+if(!eC.offsetWidth)return; // player hidden (phone Library/Settings screen): skip drawing
+tt(eT1,fm(e.currentTime));tt(eT2,'-'+fm(Math.max(0,(e.duration||0)-e.currentTime)));
+eNsh.classList.toggle('on',!!cfg.sh);eNrp.classList.toggle('on',!!cfg.rp);tt(eNrpI,cfg.rp==2?'↻¹':'↻');{const f0=fav.has(Q[qi]);eNlk.classList.toggle('on',f0);tt(eNlkI,f0?'♥':'♡')}
 let x=cs(cvz),W=cvz.width,H=cvz.height;x.clearRect(0,0,W,H);x.fillStyle=cfg.vc;const bw=W/64;for(let i=0;i<64;i++){const v=fd[i]/255*H;x.globalAlpha=.9;x.fillRect(i*bw+1,H-v,bw-2,v);x.globalAlpha=.25;x.fillRect(i*bw+1,H-v-4,bw-2,2)}x.globalAlpha=1;
 x=cs(cwf);W=cwf.width;H=cwf.height;x.clearRect(0,0,W,H);const pr=e.duration?e.currentTime/e.duration:0;
 if(W&&H){const[a0,a1]=wfLayers(W,H),pw=Math.max(1,pr*W|0);x.drawImage(a0,0,0);if(pr>0)x.drawImage(a1,0,0,pw,H,0,0,pw,H);x.fillStyle='#fff';x.fillRect(pr*W-1,0,2,H)}
 dial(pr,bs);if(fc%3==0)gg(pr,bs);
 const lp=(pr*100).toFixed(2)+'%';if(eMk._l!==lp){eMk._l=lp;eMk.style.left=lp}
 tt(eTm,fm(e.currentTime)+' / '+fm(e.duration));tt(ePP,e.paused?'▶':'⏸');
-if(lines.length){let k=-1;for(let i=0;i<lines.length;i++)if(lines[i][0]<=e.currentTime)k=i;if(k!=li){li=k;const d=eLy.children;for(let i=0;i<d.length;i++)d[i].classList.toggle('on',i==k);if(k>=0)eLy.scrollTo({top:d[k].offsetTop-eLy.clientHeight/2,behavior:'smooth'})}}
 const fl=(cfg.sh?' · SHUF':'')+['',' · REP',' · REP1'][cfg.rp]+(muted?' · MUTE':'');
-tt(eSt,msg||impTxt||aiTxt||(slEnd?'SLEEP T-'+fm((slEnd-Date.now())/1000):(e.paused?'STANDBY':'SIGNAL ACTIVE')+' · '+T.length+' TRACKS'+fl))}
+tt(eSt,msg||impTxt||(slEnd?'SLEEP T-'+fm((slEnd-Date.now())/1000):(e.paused?'STANDBY':'SIGNAL ACTIVE')+' · '+T.length+' TRACKS'+fl))}
 setInterval(()=>{const e=E[cur];if(!e.duration||e.paused||xfing)return;if((e.duration-e.currentTime)/cfg.rate<=Math.max(cfg.xf,.15)+.05){const j=nextI(1);if(j>=0){xfing=1;load(j,1)}}},100);
 setInterval(()=>tt($('#clk'),new Date().toLocaleTimeString([], {hour12:false})),1000);
 function sleep(m){clearTimeout(slT);slEnd=0;if(!m)return;slEnd=Date.now()+m*6e4;slT=setTimeout(()=>{master.gain.setTargetAtTime(0,AC.currentTime,2);setTimeout(()=>{E.forEach(e=>e.pause());slEnd=0;ap()},6000)},m*6e4)}
 /* lists */
 function pk(id){let i=Q.indexOf(id);if(i<0){Q.push(id);i=Q.length-1}load(i,0)}
-function del(id,keep){const c=Q[qi];T=T.filter(t=>t.id!=id);tm.delete(id);Q=Q.filter(i=>i!=id);if(!keep){fav.delete(id);for(const k in pl)pl[k]=pl[k].filter(i=>i!=id)}tx('readwrite',s=>s.delete(id));tx('readwrite',s=>s.delete('\u0001pk'+id));if(ins.has(id)){ins.delete(id);tx('readwrite',s=>s.delete('\u0001in'+id))}qi=Q.indexOf(c);if(c==id){E.forEach(e=>e.pause());pkv=[];pkId++;lines=[];eLy.textContent='';$('#ti').textContent='STANDBY';$('#ar').textContent='Load music to begin'}sv();rl()}
+function del(id,keep){const c=Q[qi];T=T.filter(t=>t.id!=id);tm.delete(id);Q=Q.filter(i=>i!=id);if(!keep){fav.delete(id);for(const k in pl)pl[k]=pl[k].filter(i=>i!=id)}tx('readwrite',s=>s.delete(id));tx('readwrite',s=>s.delete('\u0001pk'+id));{const u=artCache.get(id);if(u){URL.revokeObjectURL(u);artCache.delete(id)}}qi=Q.indexOf(c);if(c==id){document.body.classList.add('nomini');E.forEach(e=>e.pause());pkv=[];pkId++;$('#ti').textContent='STANDBY';$('#mt').textContent='STANDBY';$('#ar').textContent='Load music to begin'}sv();rl()}
 function moveQ(i,j){if(j<0||j>=Q.length||i==j)return;const on=Q[qi],[x]=Q.splice(i,1);Q.splice(j,0,x);qi=Q.indexOf(on);sv();rl()}
 function tabs(el,list,c,set){el.textContent='';list.forEach(([k,n])=>{const b=B(n,()=>set(k));if(k==c)b.className='on';el.append(b)})}
 function mark(){const on=Q[qi];document.querySelectorAll('#ll .row').forEach(r=>r.classList.toggle('on',r.dataset.id===on));const r=document.querySelector('#ll .row.on');if(r)r.scrollIntoView({block:'nearest'})}
 function rl(){tabs($('#lt'),[['lib','Library'],['q','Queue'],['fav','Favs'],['pl','Lists'],['hi','Time']],tab,k=>{tab=k;rl()});const L=$('#ll');L.textContent='';const on=Q[qi];
-const row=(t,ctx,i,ex)=>{const r=h('div','row'+(t.id==on?' on':''));r.dataset.id=t.id;r.dataset.ctx=ctx;if(i!=null){r.dataset.i=i;if(ctx=='q')r.draggable=true}r.append(h('span','n',(fav.has(t.id)?'★ ':'')+t.ti+' · '+t.ar));if(ex)r.append(ex);return r};
-if(!T.length&&tab!='pl'){L.append(h('div','empty',APP?'NO TRACKS — click +FOLDER and pick your music folder.\nSongs stay where they are; anything you add to that folder later appears here automatically.\n\nTip: right-click any track, slider or empty area for more options.':'NO TRACKS — use +FILES / +FOLDER or drag audio files here.\nThey stay saved in this browser.\n\nTip: right-click any track, slider or empty area for more options.'));L.lastChild.style.whiteSpace='pre-line';return}
+const row=(t,ctx,i,ex)=>{const r=h('div','row'+(t.id==on?' on':''));r.dataset.id=t.id;r.dataset.ctx=ctx;if(i!=null){r.dataset.i=i;if(ctx=='q')r.draggable=true}
+const th=h('span','th',(t.ti||'?').trim().charAt(0).toUpperCase());th.dataset.id=t.id;const n=h('span','n');n.append(h('b','t',t.ti),h('small','a',t.ar));r.append(th,n);
+if(fav.has(t.id))r.append(h('span','fv','★'));if(ex)r.append(ex);const mo=h('button','mo');mo.innerHTML='<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';mo.title='More';r.append(mo);return r};
+if(!T.length&&tab!='pl'){L.append(h('div','empty',APP?'NO TRACKS — click +FOLDER and pick your music folder.\nSongs stay where they are; anything you add to that folder later appears here automatically.\n\nTip: right-click any track, slider or empty area for more options.':coarse?'NO SONGS YET — tap the button below and choose your music.\nThey are kept inside this app on your phone.\n\nTip: long-press any song for more options.':'NO TRACKS — use +FILES / +FOLDER or drag audio files here.\nThey stay saved in this browser.\n\nTip: right-click any track, slider or empty area for more options.'));L.lastChild.style.whiteSpace='pre-line';if(coarse&&!APP){const c=h('button','cta','＋  ADD SONGS');c.onclick=()=>$('#bf').click();L.lastChild.append(c)}return}
 if(tab=='lib'){if(APP&&folders.length){const w=h('small','',folders.map(bn).join(' · '));w.title=folders.join('\n');w.style.display='block';w.style.marginBottom='4px';w.style.overflow='hidden';w.style.textOverflow='ellipsis';w.style.whiteSpace='nowrap';L.append(w)}
 const s=h('input');s.type='search';s.placeholder='Search…';s.value=lq;const box=document.createElement('div');
 const draw=()=>{box.textContent='';const q=lq.toLowerCase(),f=document.createDocumentFragment();T.forEach(t=>{if(!q||(t.ti+' '+t.ar).toLowerCase().includes(q))f.append(row(t,'lib'))});box.append(f)};
-s.oninput=()=>{lq=s.value;draw()};L.append(s,box);draw()}
+s.oninput=()=>{lq=s.value;draw();lazyArt()};L.append(s,box);draw()}
 if(tab=='q'){L.append(B('Clear',()=>{Q=Q.filter(i=>i==on);qi=Q.length?0:-1;sv();rl()}));Q.forEach((id,i)=>{const t=tr(id);if(t)L.append(row(t,'q',i))})}
 if(tab=='fav'){L.append(B('Play all',()=>{Q=T.filter(t=>fav.has(t.id)).map(t=>t.id);if(Q.length)load(0,0)}));T.filter(t=>fav.has(t.id)).forEach(t=>L.append(row(t,'fav')))}
 if(tab=='pl'){const i=h('input');i.placeholder='new list name';L.append(i,B('Create',()=>{const n=i.value.trim();if(n&&!pl[n]){pl[n]=[];plSel=n;sv();rl()}}));
@@ -433,7 +494,12 @@ const s=h('select');Object.keys(pl).forEach(k=>{const o=h('option','',k);o.selec
 if(pl[plSel]){L.append(B('Play',()=>{Q=pl[plSel].filter(tr);if(Q.length)load(0,0)}),B('Delete',()=>{delete pl[plSel];plSel='';sv();rl()}));pl[plSel].map(tr).filter(Boolean).forEach(t=>L.append(row(t,'pl')))}}
 if(tab=='hi'){const d=h('input');d.type='date';d.value=L.dataset.f||'';d.onchange=()=>{L.dataset.f=d.value;rl()};L.append(d);const f=L.dataset.f;let last='';hist.forEach(x=>{const t=tr(x.id);if(!t)return;const dt=new Date(x.ts);if(f&&new Date(f+'T00:00').toDateString()!=dt.toDateString())return;const k=dt.toDateString();if(k!=last){last=k;L.append(h('h4','',k))}L.append(row(t,'hi',null,h('small','',dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))))})}}
 const LL=$('#ll');
-LL.addEventListener('click',e=>{const n=e.target.closest('.row .n');if(n)pk(n.parentNode.dataset.id)});
+LL.addEventListener('click',e=>{const r=e.target.closest('.row');if(!r)return;const mo=e.target.closest('.mo');if(mo){e.stopPropagation();const b=mo.getBoundingClientRect();showCtx(r,b.right,b.bottom);return}pk(r.dataset.id)});
+/* cover thumbnails (phone): created lazily for rows that scroll into view */
+const artCache=new Map();let artIO=null;
+function thumb(th){const t=tr(th.dataset.id);if(!t||!t.art||th.dataset.a)return;let u=artCache.get(t.id);if(!u){u=URL.createObjectURL(t.art);artCache.set(t.id,u)}th.dataset.a=1;const im=new Image();im.alt='';im.decoding='async';im.src=u;th.append(im)}
+function lazyArt(){if(!matchMedia(PHQ).matches||!window.IntersectionObserver)return;if(!artIO)artIO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){thumb(e.target);artIO.unobserve(e.target)}}),{rootMargin:'300px'});document.querySelectorAll('#ll .th').forEach(th=>artIO.observe(th))}
+{const o=rl;rl=function(){o();lazyArt()}}
 let dragFrom=-1;
 LL.addEventListener('dragstart',e=>{const r=e.target.closest('.row[data-i]');if(!r||r.dataset.ctx!='q')return;dragFrom=+r.dataset.i;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','q')});
 LL.addEventListener('dragover',e=>{if(dragFrom>=0)e.preventDefault()});
@@ -447,7 +513,6 @@ function rr(){tabs($('#rt'),[['aud','Audio'],['sty','Style'],['sys','System']],r
 if(rtab=='aud'){P.append(h('h4','','10-band EQ'));const eb=h('div','eqb');F.forEach((f,j)=>{const c=h('div','bd'),i=h('input','vr');i.type='range';i.min=-12;i.max=12;i.step=.5;i.value=cfg.eq[j];i.oninput=()=>{cfg.eq[j]=+i.value;ap();sv()};i._rs=()=>{cfg.eq[j]=0;i.value=0;ap();sv()};c.append(i,h('small','',f<1000?f:f/1000+'k'));eb.append(c)});P.append(eb);
 const s=h('select');s.append(h('option','','Preset…'));[...Object.keys(PR),...Object.keys(cfg.prof)].forEach(k=>s.append(h('option','',k)));s.onchange=()=>{const a=PR[s.value]||cfg.prof[s.value];if(a){cfg.eq=[...a];ap();sv();rr()}};P.append(s);
 P.append(h('h4','','Tone'));sl(P,'Bass boost','bass',0,15,.5);sl(P,'Treble','tre',-12,12,.5);sl(P,'Vocal boost','voc',0,12,.5);
-P.append(h('h4','','Vocal remover'));{const f=h('div','flex');tgl(f,'Remove vocals','vr');tgl(f,'AI','ai');tgl(f,'Fast AI','aif');tgl(f,'Gentle (low CPU)','ail');f.append(B('Process queue',()=>{Q.forEach(i=>aiAdd(i));flash('AI: '+insQ.length+' SONG(S) QUEUED')},'Make AI instrumentals for every song in the queue (runs in the background)'));P.append(f);sl(P,'Strength','vrk',0,1,.05,v=>Math.round(v*100)+'%');sl(P,'Width','vrw',0,1,.05,v=>Math.round(v*100)+'%');sl(P,'Extra mid cut','vrc',0,15,.5,v=>v+' dB');P.append(h('small','','AI separates the real voice with a neural model: each song is processed once, saved, and then plays instantly as a vocal-free version. Fast AI is about 3x quicker (slightly lower quality); turn it off for the best quality. Gentle keeps your computer responsive but takes longer. Until it is ready, the live filter plays ('+(wk?'smart':'classic')+' mode; Width and Extra mid cut tune it).'))}
 P.append(h('h4','','Playback'));sl(P,'Speed','rate',.5,2,.05,v=>v+'x');sl(P,'Crossfade','xf',0,12,1,v=>v+'s');
 det(P,'SPACE & BALANCE',d=>{sl(d,'Surround','sur',0,1,.05);sl(d,'Reverb','rev',0,1,.05);sl(d,'Balance L/R','bal',-1,1,.05);const f=h('div','flex');tgl(f,'Mono','mono');tgl(f,'Normalize','norm');d.append(f)});
 det(P,'SAVE EQ PROFILE',d=>{const pn=h('input');pn.placeholder='profile name';d.append(pn,B('Save EQ',()=>{if(pn.value.trim()){cfg.prof[pn.value.trim()]=[...cfg.eq];sv();rr()}}))})}
@@ -467,24 +532,22 @@ function clearBg(){document.body.style.backgroundImage='';tx('readwrite',s=>s.de
 $('#fbg').onchange=e=>{const f=e.target.files[0];if(f){setBg(f);tx('readwrite',s=>s.put({id:'\u0001bg',blob:f}))}e.target.value=''};
 $('#fart').onchange=e=>{const f=e.target.files[0],t=tr(Q[qi]);if(f&&t){t.art=f;put(t);showArt(t)}e.target.value=''};
 /* right-click menus: rare options live here instead of cluttering the UI */
-const CM=$('#cm'),hideMenu=()=>{CM.style.display='none'};
-function menu(x,y,items){CM.textContent='';CM.classList.remove('fl');
-const mk=(it,box)=>{if(it==='-'){box.append(h('hr'));return}const d=h('div',it.dis?'dis':'',it.t);if(it.sub){d.classList.add('arrow');const s=h('div','sub');it.sub.forEach(i=>mk(i,s));d.append(s);d.onclick=e=>{e.stopPropagation();d.classList.toggle('open')}}else d.onclick=e=>{e.stopPropagation();hideMenu();it.f()};box.append(d)};
-items.forEach(i=>mk(i,CM));CM.style.display='block';CM.style.left=x+'px';CM.style.top=y+'px';const r=CM.getBoundingClientRect();
+const CMB=$('#cmb'),CM=$('#cm'),LY=[],rawHide=()=>{CM.style.display='none';CMB.style.display='none'},hideMenu=()=>{if(LY[LY.length-1]=='menu'){if(!mClosing){mClosing=1;history.back()}}else rawHide()};let afterMenu=null,mClosing=0;CMB.onclick=hideMenu;
+function menu(x,y,items,title){CM.textContent='';CM.classList.remove('fl');if(title)CM.append(h('div','mh',title));
+const mk=(it,box)=>{if(it==='-'){box.append(h('hr'));return}const d=h('div',it.dis?'dis':'',it.t);if(it.sub){d.classList.add('arrow');const s=h('div','sub');it.sub.forEach(i=>mk(i,s));d.append(s);d.onclick=e=>{e.stopPropagation();d.classList.toggle('open')}}else d.onclick=e=>{e.stopPropagation();if(LY[LY.length-1]=='menu'){afterMenu=it.f;if(!mClosing){mClosing=1;history.back()}}else{rawHide();it.f()}};box.append(d)};
+items.forEach(i=>mk(i,CM));CM.style.display='block';CMB.style.display=matchMedia(PHQ).matches?'block':'none';if(matchMedia(PHQ).matches&&LY[LY.length-1]!='menu'){try{history.pushState({l:'menu'},'');LY.push('menu')}catch{}}CM.style.left=x+'px';CM.style.top=y+'px';const r=CM.getBoundingClientRect();
 CM.style.left=Math.max(0,Math.min(x,innerWidth-r.width-4))+'px';CM.style.top=Math.max(0,Math.min(y,innerHeight-r.height-4))+'px';if(x+r.width+200>innerWidth)CM.classList.add('fl')}
 const ck=(on,l)=>(on?'✓ ':'   ')+l;
-function vrTog(){cfg.vr=cfg.vr?0:1;ap();sv();flash(cfg.vr?'VOCAL REMOVER ON':'VOCAL REMOVER OFF');if(rtab=='aud')rr()}
-function liveOpen(code){if(window.liveShow)return liveShow(code);const a=document.createElement('script');a.src='lib/peerjs.min.js';a.onload=()=>{const b=document.createElement('script');b.src='live.js';b.onload=()=>liveShow(code);b.onerror=()=>flash('LIVE ROOM FILES MISSING');document.head.append(b)};a.onerror=()=>flash('LIVE ROOM FILES MISSING (lib/peerjs.min.js)');document.head.append(a)}
-{const rq=new URLSearchParams(location.search).get('room');if(rq)setTimeout(()=>liveOpen(rq),900)}
 function appItems(){const e=E[cur],id=Q[qi],bc=c=>document.body.classList.contains(c);
-const it=[{t:e.paused?'▶  Play':'⏸  Pause',f:tg},{t:'⏭  Next',f:()=>go(1)},{t:'⏮  Previous',f:()=>go(-1)},'-',
+const it=[{t:coarse?'＋  Add songs…':'＋  Add files…',f:()=>$('#bf').click()},...(coarse?[]:[{t:'＋  Add folder…',f:()=>$('#bd').click()}]),'-',{t:e.paused?'▶  Play':'⏸  Pause',f:tg},{t:'⏭  Next',f:()=>go(1)},{t:'⏮  Previous',f:()=>go(-1)},'-',
 {t:ck(cfg.sh,'Shuffle'),f:()=>{cfg.sh=cfg.sh?0:1;sv()}},{t:'Repeat: '+['Off','All','One'][cfg.rp],f:()=>{cfg.rp=(cfg.rp+1)%3;sv()}},
-{t:fav.has(id)?'♥  Remove current from favorites':'♡  Add current to favorites',f:favCur,dis:!id},{t:ck(muted,'Mute'),f:mute},{t:ck(cfg.vr,'Remove vocals (karaoke)   V'),f:vrTog},{t:'🎙  Live room'+(window.liveLabel?liveLabel():'')+'…',f:()=>liveOpen()},'-',
+{t:fav.has(id)?'♥  Remove current from favorites':'♡  Add current to favorites',f:favCur,dis:!id},{t:ck(muted,'Mute'),f:mute},'-',
 {t:'View',sub:[{t:ck(bc('focus'),'Focus mode'),f:focusT},{t:ck(bc('room'),'Room mode'),f:roomT},{t:ck(cfg.amb,'Ambient glow'),f:()=>{cfg.amb=cfg.amb?0:1;th();sv();if(rtab=='sys')rr()}}]},
 {t:'Images',sub:[{t:'Set track art…',f:()=>$('#fart').click(),dis:!id},{t:'Set background…',f:()=>$('#fbg').click()},{t:'Clear background',f:clearBg}]},
 {t:'Sleep timer',sub:[15,30,60,0].map(m=>({t:m?m+' min':'Off',f:()=>sleep(m)}))}];
 if(APP)it.push({t:'Library ('+folders.length+' folder'+(folders.length==1?'':'s')+')',sub:[{t:'Add folder…',f:()=>APP.pickFolder()},{t:'Add files…',f:()=>APP.pickFiles()},{t:'Rescan folders now',f:()=>APP.rescan()},{t:'Restore removed tracks',f:()=>APP.restore()},...(folders.length?['-',...folders.map(d=>({t:'Stop watching: '+bn(d),f:()=>APP.removeFolder(d)}))]:[])]});
 if(APP)it.push('-',{t:ck(fsState,'Fullscreen   F11'),f:()=>APP.fullscreen()},{t:'Minimize',f:()=>APP.minimize()},{t:'Exit   Ctrl+Q',f:()=>APP.quit()});
+if(!APP)it.push('-',{t:coarse?'⬇  Install app':'⬇  Get the Windows app',f:dlOpen});
 return it}
 function trackItems(id,ctx,i){const on=Q[qi],ls=Object.keys(pl),it=[{t:'▶  Play',f:()=>pk(id)}];
 if(Q.includes(id))it.push({t:'Play next',dis:id===on,f:()=>{Q.splice(Q.indexOf(id),1);Q.splice(Q.indexOf(on)+1,0,id);qi=Q.indexOf(on);sv();rl()}});
@@ -493,22 +556,46 @@ it.push('-',{t:fav.has(id)?'☆  Remove favorite':'★  Add to favorites',f:()=>
 {t:'Add to list',sub:ls.length?ls.map(k=>({t:(pl[k].includes(id)?'✓ ':'   ')+k,f:()=>{if(!pl[k].includes(id)){pl[k].push(id);sv()}}})):[{t:'No lists yet — open the Lists tab',f:()=>{tab='pl';rl()}}]},'-');
 if(ctx=='q'){it.push({t:'Move up',dis:i<=0,f:()=>moveQ(i,i-1)},{t:'Move down',dis:i>=Q.length-1,f:()=>moveQ(i,i+1)},{t:'Remove from queue',f:()=>{const c=Q[qi];Q.splice(i,1);qi=Q.indexOf(c);sv();rl()}})}
 if(ctx=='pl')it.push({t:'Remove from list',f:()=>{pl[plSel]=pl[plSel].filter(x=>x!=id);sv();rl()}});
-it.push({t:ins.has(id)?'Delete AI instrumental':'Make instrumental (AI)',f:()=>ins.has(id)?aiDel(id):aiAdd(id,1)});
 const tk=tr(id);if(tk&&tk.disk)it.push({t:'Show in folder',f:()=>APP.reveal(id)},{t:'Remove from library (file stays on disk)',f:()=>APP.ignore(id)});
 else it.push({t:'Delete from library…',f:()=>{if(tk&&confirm('Delete "'+tk.ti+'" from the library?'))del(id)}});return it}
 function textItems(t){return[{t:'Cut',f:()=>{t.focus();document.execCommand('cut')}},{t:'Copy',f:()=>{t.focus();document.execCommand('copy')}},{t:'Paste',f:()=>{t.focus();document.execCommand('paste')}},{t:'Select all',f:()=>{t.focus();t.select()}}]}
-addEventListener('contextmenu',e=>{e.preventDefault();const t=e.target,r=t.closest('.row[data-id]'),s=t.closest('input[type=range]');let it;
+function showCtx(t,x,y){const r=t.closest('.row[data-id]'),s=t.closest('input[type=range]');let it;
 if(r)it=trackItems(r.dataset.id,r.dataset.ctx,r.dataset.i!=null?+r.dataset.i:null);
 else if(s&&s._rs)it=[{t:'Reset to default',f:s._rs}];
 else if(t.matches('textarea,input[type=text],input:not([type])'))it=textItems(t);
 else it=appItems();
-menu(e.clientX,e.clientY,it)});
-addEventListener('keyup',e=>{if(e.key=='Alt'||e.key=='Meta')e.preventDefault()},true);addEventListener('click',hideMenu);addEventListener('blur',hideMenu);addEventListener('resize',hideMenu);
+menu(x,y,it,r?(tr(r.dataset.id)||{}).ti:'')}
+addEventListener('contextmenu',e=>{e.preventDefault();showCtx(e.target,e.clientX,e.clientY)});
+/* touch: long-press = right-click (iOS Safari never fires contextmenu) */
+let lpT,lpX=0,lpY=0,lpHit=0;
+addEventListener('touchstart',e=>{if(e.touches.length!=1){clearTimeout(lpT);return}const t=e.touches[0],tg=e.target;lpX=t.clientX;lpY=t.clientY;clearTimeout(lpT);lpT=setTimeout(()=>{lpHit=1;if(navigator.vibrate)try{navigator.vibrate(15)}catch{}showCtx(tg,lpX,lpY)},550)},{passive:true});
+addEventListener('touchmove',e=>{const t=e.touches[0];if(t&&(Math.abs(t.clientX-lpX)>10||Math.abs(t.clientY-lpY)>10))clearTimeout(lpT)},{passive:true});
+['touchend','touchcancel'].forEach(n=>addEventListener(n,e=>{clearTimeout(lpT);if(lpHit){if(n=='touchend'&&e.cancelable)e.preventDefault();setTimeout(()=>lpHit=0,60)}},{passive:false}));
+/* phone layout: Library / Settings screens, mini player, full-screen Now Playing (swipe down or Back to close) */
+let lastV='lib',npPushed=0;
+const setV=v=>{if(v!='player')lastV=v;document.body.dataset.v=v;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='lib')mark()};
+function openNP(){if(document.body.dataset.v=='player')return;setV('player');if(!npPushed){try{history.pushState({l:'np'},'');LY.push('np');npPushed=1}catch{}}}
+function closeNP(){if(document.body.dataset.v!='player')return;if(npPushed&&LY[LY.length-1]=='np')history.back();else setV(lastV)}
+addEventListener('popstate',()=>{const l=LY.pop();
+ if(l=='menu'){mClosing=0;rawHide();const f=afterMenu;afterMenu=null;if(f)setTimeout(f,0)}
+ else if(l=='np'){npPushed=0;if(document.body.dataset.v=='player')setV(lastV);if(lastV=='lib'&&LY[LY.length-1]=='v')history.back()}
+ else if(l=='v'){if(document.body.dataset.v!='player'&&document.body.dataset.v!='lib')setV('lib')}});
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(v=='player'){openNP();return}
+ if(v=='lib'){if(LY[LY.length-1]=='v')history.back();else setV('lib')}
+ else{setV(v);if(!LY.includes('v')){try{history.pushState({l:'v'},'');LY.push('v')}catch{}}}});
+$('#mi').onclick=openNP;$('#mpp').onclick=tg;$('#mnx').onclick=()=>go(1);
+$('#npc').onclick=closeNP;$('#npm').onclick=e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();menu(r.left,r.bottom,appItems())};
+$('#nsh').onclick=()=>{cfg.sh=cfg.sh?0:1;sv()};$('#nrp').onclick=()=>{cfg.rp=(cfg.rp+1)%3;sv()};$('#nlk').onclick=favCur;
+$('#nq').onclick=()=>{tab='q';lastV='lib';closeNP();rl()};
+$('#bplus').onclick=e=>{e.stopPropagation();if(coarse){$('#bf').click();return}menu(0,0,[{t:'＋  Add files…',f:()=>$('#bf').click()},{t:'＋  Add folder…',f:()=>$('#bd').click()}],'Add music')};
+{let sy=0,sx=0,ok=0;const C=$('#C');C.addEventListener('touchstart',e=>{const t=e.target;ok=e.touches.length==1&&!!t.closest('#npt,#top')&&!t.closest('#wf');sy=e.touches[0].clientY;sx=e.touches[0].clientX},{passive:true});
+C.addEventListener('touchend',e=>{if(!ok)return;ok=0;const t=e.changedTouches[0];if(t.clientY-sy>110&&Math.abs(t.clientX-sx)<80)closeNP()},{passive:true})}
+addEventListener('click',hideMenu);addEventListener('blur',hideMenu);addEventListener('resize',hideMenu);
 $('#bm').onclick=e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();menu(r.left,r.bottom+4,appItems())};
-addEventListener('keydown',e=>{if(MODK.includes(e.key)){if(e.key=='Alt'||e.key=='Meta')e.preventDefault();return}if(e.key=='Escape')hideMenu();if(listen){cfg.keys[listen]=e.key;listen=null;sv();rr();e.preventDefault();return}if(e.target.matches('textarea,select,input:not([type=range])'))return;
+addEventListener('keydown',e=>{if(e.key=='Escape')hideMenu();if(listen){cfg.keys[listen]=e.key;listen=null;sv();rr();e.preventDefault();return}if(e.target.matches('textarea,select,input:not([type=range])'))return;
 if(e.shiftKey&&(e.key=='ArrowRight'||e.key=='ArrowLeft')){e.preventDefault();seek(e.key=='ArrowRight'?10:-10);return}
 if((e.key=='ArrowUp'||e.key=='ArrowDown')&&!e.target.matches('input[type=range]')){e.preventDefault();vol(e.key=='ArrowUp'?.05:-.05);return}
-if(e.altKey||e.ctrlKey||e.metaKey)return;const A={play:tg,next:()=>go(1),prev:()=>go(-1),mute,fav:favCur,focus:focusT,vocal:vrTog};for(const k in A)if(cfg.keys[k]==e.key){e.preventDefault();if(e.target.blur)e.target.blur();A[k]();break}});
+const A={play:tg,next:()=>go(1),prev:()=>go(-1),mute,fav:favCur,focus:focusT};for(const k in A)if(cfg.keys[k]==e.key){e.preventDefault();if(e.target.blur)e.target.blur();A[k]();break}});
 /* Two versions of the site: this web version, and the Windows app (shown only in the browser, never inside the app).
    Put the built installers next to index.html in the downloads/ folder, or change the links here. */
 /* On GitHub Pages the installers come from the repo's latest Release (the .exe files are too big for Pages itself).
@@ -529,19 +616,19 @@ function dlOpen(){if(APP)return;if(!dlO){
  dlO=h('div');dlO.id='dlo';const b=h('div');b.id='dlb';
  const x=B('✕',dlClose,'Close');x.id='dlx';
  const pb=B('⬇ Install as web app',async()=>{if(!ipE)return;ipE.prompt();try{await ipE.userChoice}catch{}ipE=null;pb.style.display='none'});pb.id='pwab';pb.style.display=ipE?'':'none';
- const web=h('div','card');web.append(h('b','','WEB VERSION'),h('span','tag','YOU ARE HERE'),(()=>{const u=h('ul');li(['Runs right now in any browser','Add songs and they are kept inside this browser','Install it to your home screen / desktop — works offline']).forEach(i=>u.append(i));return u})(),pb,...(iOS?[h('div','note','iPhone / iPad: tap Share → Add to Home Screen')]:[]),B('Continue on web',dlClose));
+ const web=h('div','card');web.append(h('b','','WEB VERSION'),h('span','tag','YOU ARE HERE'),(()=>{const u=h('ul');li(['Runs right now in any browser','Add songs and they are kept inside this browser','Install it to your home screen / desktop — works offline']).forEach(i=>u.append(i));return u})(),pb,...(iOS?[h('div','note','iPhone / iPad: tap Share → Add to Home Screen')]:[]),...(isAnd?[h('div','note','Android: if the install button is missing, open the Chrome menu ⋮ → Install app (or Add to Home screen).')]:[]),B(coarse?'Close':'Continue on web',dlClose));
  const win=h('div','card win');win.append(h('b','','WINDOWS APP'),h('span','tag','RECOMMENDED'),(()=>{const u=h('ul');li(['Opens fullscreen, with window and exit controls','Plays straight from your music folders — nothing is uploaded','Add a song to the folder and it appears automatically','Works offline, media keys, “Open with” for audio files']).forEach(i=>u.append(i));return u})(),
   dl('⬇ Download for Windows (installer)',DL.installer,1),dl('Portable version (no install)',DL.portable),h('div','note','v'+DL.version+' · Windows 10 / 11, 64-bit'+(isWin?'':' · you are not on Windows — this download is for a Windows PC')));
- const cards=h('div','cards');cards.append(web,win);
- b.append(x,h('h3','','ORPHEUS'),h('div','sub','Choose how you want to listen'),cards);dlO.append(b);document.body.append(dlO);
+ const cards=h('div','cards');cards.append(web,...(coarse?[]:[win]));
+ b.append(x,h('h3','','ORPHEUS'),h('div','sub',coarse?'Add ORPHEUS to your home screen':'Choose how you want to listen'),cards);dlO.append(b);document.body.append(dlO);
  dlO.addEventListener('click',e=>{if(e.target===dlO)dlClose()});addEventListener('keydown',e=>{if(e.key=='Escape'&&dlO.classList.contains('show'))dlClose()})}
  dlO.classList.add('show')}
 $('#bdl').onclick=dlOpen;if(coarse)$('#bdl').textContent='⬇ App';
 if(!APP&&!standalone&&!coarse){let seen=0;try{seen=localStorage.getItem('orpheus_dl')}catch{}if(!seen)setTimeout(dlOpen,1200)}
 /* boot */
 th();ap();rr();rl();fr();
-(async()=>{const all=await tx('readonly',s=>s.getAll())||[],pks=new Map();T=[];
-for(const r of all){if(r.id[0]!=='\u0001'){if(r.disk)cache.set(r.id,r);else if(!APP)T.push(r)}else if(r.id.startsWith('\u0001pk'))pks.set(r.id.slice(3),r.pk);else if(r.id.startsWith('\u0001in'))ins.set(r.id.slice(3),r.blob);else if(r.id=='\u0001bg')setBg(r.blob)}
+window.booted=(async()=>{const all=await tx('readonly',s=>s.getAll())||[],pks=new Map();T=[];
+for(const r of all){if(r.id[0]!=='\u0001'){if(r.disk)cache.set(r.id,r);else if(!APP)T.push(r)}else if(r.id.startsWith('\u0001pk'))pks.set(r.id.slice(3),r.pk);else if(r.id=='\u0001bg')setBg(r.blob)}
 T.forEach(t=>{t.pk=pks.get(t.id);tm.set(t.id,t)});cache.forEach(t=>t.pk=pks.get(t.id));
 if(APP){const lb=await APP.getLibrary();folders=lb.folders||[];upsert(lb.files,1);
  const live=new Set(lb.files.map(e=>e.p));cache.forEach((t,id)=>{if(!live.has(id)){tx('readwrite',s=>s.delete(id));tx('readwrite',s=>s.delete('\u0001pk'+id))}});cache.clear();
@@ -549,6 +636,31 @@ if(APP){const lb=await APP.getLibrary();folders=lb.folders||[];upsert(lb.files,1
 else{T.sort(srt);Q=(st.q||[]).filter(i=>tm.has(i));const s=new Set(Q);T.forEach(t=>{if(!s.has(t.id))Q.push(t.id)})}
 if(Q.length){const l=Q.indexOf(st.last);load(l<0?0:l,0,false)}rl();if(APP)APP.ready()})();
 </script><script>
+/* Android extras: typing hides the bottom bars, tiny haptics, notification/lock-screen controls with a seek bar, files shared to the app */
+(()=>{
+document.addEventListener('focusin',e=>{if(coarse&&e.target.matches&&e.target.matches('input:not([type=range]):not([type=checkbox]):not([type=color]),textarea'))document.body.classList.add('kb')});
+document.addEventListener('focusout',()=>document.body.classList.remove('kb'));
+const HV=new Set(['pp','pv','nx','mpp','mnx','nsh','nrp','nlk','npc']);
+document.addEventListener('click',e=>{if(!coarse||!navigator.vibrate)return;const b=e.target.closest&&e.target.closest('button');if(b&&HV.has(b.id))try{navigator.vibrate(8)}catch{}},true);
+if('mediaSession' in navigator){const ms=navigator.mediaSession;
+ const pos=()=>{try{const e=E[cur],d=e.duration;if(isFinite(d)&&d>0)ms.setPositionState({duration:d,playbackRate:e.playbackRate||1,position:Math.min(Math.max(e.currentTime,0),d)})}catch{}};
+ const ps=()=>{try{ms.playbackState=E[cur].paused?'paused':'playing'}catch{}};
+ E.forEach(e=>['loadedmetadata','durationchange','seeked','ratechange','play','playing','pause'].forEach(ev=>e.addEventListener(ev,()=>{pos();ps()})));
+ const H=(a,f)=>{try{ms.setActionHandler(a,f)}catch{}};
+ H('seekto',d=>{const e=E[cur];if(d&&d.seekTime!=null){e.currentTime=d.seekTime;pos()}});
+ H('seekbackward',d=>seek(-((d&&d.seekOffset)||10)));H('seekforward',d=>seek((d&&d.seekOffset)||10));H('stop',()=>E[cur].pause());
+}
+(window.booted||Promise.resolve()).then(async()=>{try{
+ if(!/[?&]shared=1/.test(location.search))return;
+ history.replaceState(null,'',location.pathname);
+ const c=await caches.open('orpheus-share'),ks=await c.keys(),files=[];
+ for(const k of ks){const r=await c.match(k);if(!r)continue;const b=await r.blob();files.push(new File([b],decodeURIComponent(r.headers.get('X-Name')||'shared'),{type:b.type||r.headers.get('Content-Type')||''}))}
+ for(const k of ks)await c.delete(k);
+ if(files.length)await add(files,true);
+}catch{}});
+})();
+</script>
+<script>
 /* Intro: name swaps places with the lyre, strings are plucked and settle. Sound = synthesized plucked strings (no audio files). */
 (()=>{
 const root=document.documentElement;if(!root.classList.contains('intro-on'))return;

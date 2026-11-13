@@ -15,7 +15,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: node setup-ai.js
       - run: npm ci
       - run: npx electron-builder --win nsis portable --publish never
       - name: Publish Release
