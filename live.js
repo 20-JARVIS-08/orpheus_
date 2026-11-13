@@ -24,7 +24,10 @@
     if (role == 'host') { addMsg(nick, m, 1); conns.forEach(c => { try { c.send(msg); } catch {} }); }
     else if (role == 'guest' && gconn) { try { gconn.send(msg); } catch {} }
   };
-  const net = () => (typeof cfg != 'undefined' && cfg.liveNet) || {};
+  /* Default TURN relay: every room (host and listeners) uses it unless the user enters their own relay under Advanced. */
+  const DEFNET = { turn: 'turn:global.relay.metered.ca:80, turn:global.relay.metered.ca:80?transport=tcp, turns:global.relay.metered.ca:443?transport=tcp', user: '797d9323a4402473335e0af8', pass: 'p9S/xI/jlNQlDqDc' };
+  const own = () => (typeof cfg != 'undefined' && cfg.liveNet) || {};
+  const net = () => { const o = own(); return o.turn ? o : Object.assign({}, o, DEFNET); };
   const ice = () => {
     const l = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }, { urls: 'stun:stun.cloudflare.com:3478' }], n = net();
     if (n.turn) l.push({ urls: n.turn.split(/[\s,]+/).filter(Boolean), username: n.user || '', credential: n.pass || '' });
@@ -202,12 +205,12 @@
       body.append(row(ci, jb));
       body.append(el('div', 'opacity:.55;font-size:11px;margin-top:10px', 'Peer-to-peer. Works best with up to ' + MAX + ' listeners.'));
       const ad = el('details', 'margin-top:8px;font-size:12px'), sm = el('summary', 'cursor:pointer;opacity:.8', 'Advanced / connection problems'); ad.append(sm);
-      const fld = (ph, k) => { const i = el('input', INP + ';font-weight:400;font-size:12px;margin-top:6px'); i.placeholder = ph; i.value = net()[k] || ''; i.onchange = () => { cfg.liveNet = Object.assign({}, cfg.liveNet || {}, { [k]: i.value.trim() }); sv(); }; i.onkeydown = i.onkeyup = i.onkeypress = e => e.stopPropagation(); return i; };
+      const fld = (ph, k) => { const i = el('input', INP + ';font-weight:400;font-size:12px;margin-top:6px'); i.placeholder = ph; i.value = own()[k] || ''; i.onchange = () => { cfg.liveNet = Object.assign({}, cfg.liveNet || {}, { [k]: i.value.trim() }); sv(); }; i.onkeydown = i.onkeyup = i.onkeypress = e => e.stopPropagation(); return i; };
       const res = el('div', 'margin-top:8px'), tb = el('button', BTN + ';margin-top:8px;width:100%', 'Test connection'); tb.onclick = () => diag(res);
       const pre2 = el('button', BTN + ';margin-top:8px;width:100%', 'Use free public relay (shared, may be slow)');
       pre2.onclick = () => { cfg.liveNet = Object.assign({}, cfg.liveNet || {}, { turn: 'turn:openrelay.metered.ca:80, turn:openrelay.metered.ca:443, turns:openrelay.metered.ca:443?transport=tcp', user: 'openrelayproject', pass: 'openrelayproject' }); sv(); view(); const d = body.querySelector('details'); if (d) d.open = true; };
       ad.append(pre2, fld('Own PeerJS server (optional), e.g. my.server.com:443', 'srv'), fld('TURN relay URL (optional), e.g. turn:host:3478', 'turn'), fld('TURN username', 'user'), fld('TURN password', 'pass'), tb, res,
-        el('div', 'opacity:.6;margin-top:6px', 'Host and listeners must use the same connection server. A TURN relay helps when networks block direct connections.'));
+        el('div', 'opacity:.6;margin-top:6px', 'A built-in TURN relay is used by default (leave the TURN fields empty). Host and listeners must use the same connection server.'));
       body.append(ad);
     }
   }
