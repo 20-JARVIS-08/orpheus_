@@ -210,7 +210,7 @@ let st={};try{st=JSON.parse(localStorage.getItem('orpheus')||'{}')}catch{}
 const F=[31,62,125,250,500,1000,2000,4000,8000,16000];
 const PR={Flat:[0,0,0,0,0,0,0,0,0,0],Rock:[4,3,2,0,-1,-1,1,3,4,4],Jazz:[3,2,1,2,-2,-2,0,1,2,3],Pop:[-1,1,3,4,3,0,-1,-1,1,2],Classical:[4,3,2,1,-1,-1,0,2,3,4]};
 const D={a:'#e6e6e6',vc:'#e6e6e6',sp:1,r:'12px',rv:1,xf:0,eq:Array(10).fill(0),bass:0,tre:0,voc:0,sur:0,rev:0,mono:0,vr:0,ai:1,aif:1,ail:0,vrk:1,vrw:.6,vrc:0,bal:0,norm:0,vol:.8,rate:1,sh:0,rp:0,amb:1,prof:{},keys:{play:' ',next:'ArrowRight',prev:'ArrowLeft',mute:'m',fav:'f',focus:'z',vocal:'v'}};
-const cfg={...D,...st.cfg};cfg.keys={...D.keys,...cfg.keys};const MODK=['Alt','AltGraph','Control','Shift','Meta','CapsLock','ContextMenu','OS'];for(const k in D.keys)if(MODK.includes(cfg.keys[k]))cfg.keys[k]=D.keys[k];
+const cfg={...D,...st.cfg};cfg.keys={...D.keys,...cfg.keys};cfg.vr=0;const MODK=['Alt','AltGraph','Control','Shift','Meta','CapsLock','ContextMenu','OS'];for(const k in D.keys)if(MODK.includes(cfg.keys[k]))cfg.keys[k]=D.keys[k];
 /* one-time migration: visitors with an old saved 2px (sharp) default get the new round default; their later choices are kept */
 if(st.cfg&&st.cfg.rv!==1)cfg.r=D.r;cfg.rv=1;
 let fav=new Set(st.fav||[]),pl=st.pl||{},hist=st.hist||[],plSel='',T=[],Q=[],qi=-1,tab='lib',rtab='aud',cur=0,U=[],pkv=[],pkId=0,lines=[],li=-1,xfing=0,slEnd=0,slT,listen=null,muted=0,artU='',bgU='',lq='',impTxt='',fsState=true;
@@ -252,8 +252,8 @@ vrSum.channelCount=1;vrSum.channelCountMode='explicit';
 vrSp.connect(vrP,0);vrSp.connect(vrN,1);vrP.connect(vrSum);vrN.connect(vrSum);vrSum.connect(vrKg);vrKg.connect(vrOut)}
 vrCut.Q.value=.6;vrOut.connect(vrCut);vrCut.connect(mono);vrIn.connect(vrW);
 /* smart mode: spectral processor in vocal-worklet.js; until it loads (or if it can't), the classic L-R path above is used */
-let wk=null;
-try{AC.audioWorklet.addModule('vocal-worklet.js').then(()=>{wk=new AudioWorkletNode(AC,'orpheus-vocal',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:'explicit'});vrW.connect(wk);wk.connect(vrOut);ap();if(typeof rr=='function')rr()}).catch(()=>{})}catch{}
+let wk=null,wkTried=0;
+const wkLoad=()=>{if(wkTried)return;wkTried=1;try{AC.audioWorklet.addModule('vocal-worklet.js').then(()=>{wk=new AudioWorkletNode(AC,'orpheus-vocal',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:'explicit'});vrW.connect(wk);wk.connect(vrOut);ap();if(typeof rr=='function')rr()}).catch(()=>{})}catch{}};
 /* AI vocal removal: sep-worker.js turns a song into an instrumental WAV once; it is cached and then played instead of the original */
 const K=[0,0],ins=new Map(),insU=new Map(),insAuto=new Set();let aiBad=0,aiLastVr=0,aiPill=null,aiT0=0,insQ=[],insBusy=0,insId='',aiTxt='',aiW=null,aiRej=null,aiEp='';
 function aiUi(t,err){aiTxt=err?'':t;if(!aiPill){aiPill=document.createElement('div');aiPill.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99999;max-width:min(92vw,560px);padding:10px 16px;border-radius:10px;background:rgba(10,14,20,.92);color:#fff;font:600 13px/1.5 system-ui,sans-serif;border:1px solid rgba(255,255,255,.25);cursor:pointer;display:none;text-align:center;white-space:pre-line';aiPill.title='click to hide';aiPill.onclick=()=>aiPill.style.display='none';document.body.append(aiPill)}
@@ -294,7 +294,7 @@ mg.connect(sg);sg.connect(mix);
 const pan=AC.createStereoPanner(),comp=AC.createDynamicsCompressor(),master=AC.createGain(),an=AC.createAnalyser();an.fftSize=256;
 mix.connect(pan);pan.connect(comp);comp.connect(master);master.connect(an);an.connect(AC.destination);
 const fd=new Uint8Array(128);
-function ap(){try{syncSrc();aiPlan()}catch{}vrRoute(cfg.vr&&!K[cur]?1:0);{const t=AC.currentTime;vrKg.gain.setTargetAtTime(cfg.vr?cfg.vrk:0,t,.03);vrHd.gain.setTargetAtTime(cfg.vr?1-cfg.vrk:1,t,.03);vrCl.gain.value=wk?0:1;vrW.gain.value=wk?1:0;vrCut.gain.setTargetAtTime(cfg.vr?-cfg.vrc:0,t,.05);if(wk){wk.parameters.get('k').value=cfg.vrk;wk.parameters.get('t').value=.9-.5*cfg.vrw}}eq.forEach((n,i)=>n.gain.value=cfg.eq[i]);bass.gain.value=cfg.bass;tre.gain.value=cfg.tre;voc.gain.value=cfg.voc;sg.gain.value=cfg.sur;rv.gain.value=cfg.rev;mono.channelCount=cfg.mono?1:2;pan.pan.value=cfg.bal;comp.threshold.value=cfg.norm?-26:0;comp.ratio.value=cfg.norm?5:1;master.gain.value=muted?0:cfg.vol;E.forEach(e=>e.playbackRate=cfg.rate);$('#vol').value=cfg.vol}
+function ap(){if(cfg.vr)wkLoad();try{syncSrc();aiPlan()}catch{}vrRoute(cfg.vr&&!K[cur]?1:0);{const t=AC.currentTime;vrKg.gain.setTargetAtTime(cfg.vr?cfg.vrk:0,t,.03);vrHd.gain.setTargetAtTime(cfg.vr?1-cfg.vrk:1,t,.03);vrCl.gain.value=wk?0:1;vrW.gain.value=wk?1:0;vrCut.gain.setTargetAtTime(cfg.vr?-cfg.vrc:0,t,.05);if(wk){wk.parameters.get('k').value=cfg.vrk;wk.parameters.get('t').value=.9-.5*cfg.vrw}}eq.forEach((n,i)=>n.gain.value=cfg.eq[i]);bass.gain.value=cfg.bass;tre.gain.value=cfg.tre;voc.gain.value=cfg.voc;sg.gain.value=cfg.sur;rv.gain.value=cfg.rev;mono.channelCount=cfg.mono?1:2;pan.pan.value=cfg.bal;comp.threshold.value=cfg.norm?-26:0;comp.ratio.value=cfg.norm?5:1;master.gain.value=muted?0:cfg.vol;E.forEach(e=>e.playbackRate=cfg.rate);$('#vol').value=cfg.vol}
 function th(){const s=document.documentElement.style;s.setProperty('--a',cfg.a);s.setProperty('--vc',cfg.vc);s.setProperty('--sp',cfg.sp);s.setProperty('--r',cfg.r);document.body.classList.toggle('noamb',!cfg.amb)}
 /* ID3v2.3/2.4 tags: title, artist, cover */
 const txt=d=>{const e=d[0],b=d.slice(1);return new TextDecoder(e==1?'utf-16le':e==2?'utf-16be':e==3?'utf-8':'windows-1252').decode(b).replace(/[\0﻿]/g,'').trim()};
