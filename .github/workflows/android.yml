@@ -1,0 +1,42 @@
+name: Build Android APK
+# Run by pushing a tag like v1.0.0 (attaches the APK to the Release) or by hand from the Actions tab.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - run: npm install --no-save --no-package-lock @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+      - run: python scripts/android-prepare.py
+      - run: ./gradlew assembleDebug
+        working-directory: android
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk ORPHEUS.apk
+      - name: Publish to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ORPHEUS.apk
+      - name: Keep the file when run by hand
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: orpheus-android
+          path: ORPHEUS.apk

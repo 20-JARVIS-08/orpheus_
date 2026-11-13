@@ -406,8 +406,8 @@ async function lyr(t){let s=t.lrc;lines=[];li=-1;const L=$('#ly');L.textContent=
 if(s==null&&t.lrcPath){try{const b=await(await fetch(mU(t.lrcPath))).arrayBuffer();try{s=new TextDecoder('utf-8',{fatal:true}).decode(b)}catch{s=new TextDecoder('windows-1256').decode(b)}t.lrc=s}catch{s=''}}
 if(Q[qi]!=t.id)return;lines=lrc(s);L.textContent='';
 if(!lines.length)L.append(h('div','','NO LYRICS — put a .lrc file with the same name next to the song'));else{const f=document.createDocumentFragment();lines.forEach(l=>f.append(h('div','',l[1]||'♪')));L.append(f)}}
-const go=d=>{if(!Q.length)return APP?APP.pickFolder():$('#fi').click();const e=E[cur];if(d<0){if(e.currentTime>3)e.currentTime=0;else load((qi-1+Q.length)%Q.length,0)}else{const j=nextI(0);if(j>=0)load(j,0)}};
-const tg=()=>{if(qi<0)return APP?APP.pickFolder():$('#fi').click();const e=E[cur];e.paused?playE(e):e.pause()};
+const go=d=>{if(!Q.length)return nq();const e=E[cur];if(d<0){if(e.currentTime>3)e.currentTime=0;else load((qi-1+Q.length)%Q.length,0)}else{const j=nextI(0);if(j>=0)load(j,0)}};
+const tg=()=>{if(qi<0)return nq();const e=E[cur];e.paused?playE(e):e.pause()};
 const mute=()=>{muted=!muted;ap()};
 const seek=d=>{const e=E[cur];if(e.duration)e.currentTime=Math.max(0,Math.min(e.duration,e.currentTime+d))};
 const vol=d=>{cfg.vol=Math.max(0,Math.min(1,+(cfg.vol+d).toFixed(2)));muted=0;ap();sv()};
@@ -439,11 +439,19 @@ function runJobs(){while(busy<3&&jobs.length){const t=jobs.shift();busy++;tagJob
 function upsert(list,init){
  for(const e of list){const id=e.p,key=e.mt+'|'+e.size;let t=tr(id);
   if(!t){const c=cache.get(id);cache.delete(id);
-   if(c&&c.key==key)t=c;else{t={id,disk:1,key,size:e.size,...nm(id)};jobs.push(t)}
-   t.url=mU(id);T.push(t);tm.set(id,t);Q.push(id)}
+   if(c&&c.key==key)t=c;else{t={id,disk:1,key,size:e.size,...nm(id)};if(e.ti){t.ti=e.ti;t.ar=e.ar||'Unknown'}jobs.push(t)}
+   t.url=e.u||mU(id);T.push(t);tm.set(id,t);Q.push(id)}
   else if(t.key!=key){t.key=key;t.size=e.size;t.pk=null;pkId++;jobs.push(t)}
   if(t.lrcPath!=e.lrc){t.lrcPath=e.lrc||null;t.lrc=undefined;if(Q[qi]==id)lyr(t)}}
  T.sort(srt);runJobs();if(init)return;sv();if(qi<0&&Q.length)load(0,0,false);rl()}
+/* Android app (Capacitor): the library is read from the phone's MediaStore; songs stay where they are, nothing is copied */
+const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),ML=NATIVE?Capacitor.registerPlugin('MediaLibrary'):null;
+let noAcc=0,syncing=0,syncT,denied=0;
+async function andList(){try{const a=await ML.checkAccess();if(!a.granted){noAcc=1;return{files:[],noAcc:1}}noAcc=0;const r=await ML.getTracks();return{files:(r.tracks||[]).map(x=>({p:x.p,mt:x.mt,size:x.size,ti:x.ti,ar:x.ar,u:Capacitor.convertFileSrc(x.p)})),folders:[]}}catch(er){noAcc=1;return{files:[],noAcc:1}}}
+async function andSync(){if(syncing)return;syncing=1;try{const lb=await andList();if(!lb.noAcc){const live=new Set(lb.files.map(e=>e.p));T.filter(t=>t.disk&&!live.has(t.id)).forEach(t=>del(t.id,1));upsert(lb.files)}else rl()}finally{syncing=0}}
+async function allow(){try{const r=await ML.requestAccess();if(r.granted){denied=0;return andSync()}denied++;if(denied>1)ML.openSettings();else flash('ACCESS NEEDED TO LIST YOUR SONGS')}catch{}}
+const nq=()=>APP?APP.pickFolder():NATIVE&&noAcc?allow():$('#fi').click();
+if(NATIVE){ML.addListener('libraryChanged',()=>{clearTimeout(syncT);syncT=setTimeout(andSync,1500)});document.addEventListener('visibilitychange',()=>{if(!document.hidden)andSync()})}
 if(APP)APP.onUpdate(d=>{if(d.folders)folders=d.folders;(d.remove||[]).forEach(id=>{if(tr(id))del(id,1)});if(d.add&&d.add.length)upsert(d.add);else rl()});
 /* HUD dial + gauges */
 const cvz=$('#vz'),cwf=$('#wf'),cdial=$('#dial'),cg=[...document.querySelectorAll('.g')],eTm=$('#tm'),ePP=$('#pp'),eMk=$('#mk'),eSt=$('#stat'),eLy=$('#ly'),eMpp=$('#mpp'),eC=$('#C'),eTi=$('#ti'),eAr=$('#ar'),eMt=$('#mt'),eMa=$('#ma'),eMimg=$('#mimg'),eMpg=$('#mpg'),eT1=$('#t1'),eT2=$('#t2'),eNsh=$('#nsh'),eNrp=$('#nrp'),eNlk=$('#nlk'),eNly=$('#nly'),eNrpI=$('#nrp i'),eNlkI=$('#nlk i'),docEl=document.documentElement;
@@ -496,7 +504,7 @@ function rl(){tabs($('#lt'),[['lib','Library'],['q','Queue'],['fav','Favs'],['pl
 const row=(t,ctx,i,ex)=>{const r=h('div','row'+(t.id==on?' on':''));r.dataset.id=t.id;r.dataset.ctx=ctx;if(i!=null){r.dataset.i=i;if(ctx=='q')r.draggable=true}
 const th=h('span','th',(t.ti||'?').trim().charAt(0).toUpperCase());th.dataset.id=t.id;const n=h('span','n');n.append(h('b','t',t.ti),h('small','a',t.ar));r.append(th,n);
 if(fav.has(t.id))r.append(h('span','fv','★'));if(ex)r.append(ex);const mo=h('button','mo','⋯');mo.title='More';r.append(mo);return r};
-if(!T.length&&tab!='pl'){L.append(h('div','empty',APP?'NO TRACKS — click +FOLDER and pick your music folder.\nSongs stay where they are; anything you add to that folder later appears here automatically.\n\nTip: right-click any track, slider or empty area for more options.':coarse?'NO SONGS YET — tap the button below and choose your music.\nThey are kept inside this app on your phone.\n\nTip: long-press any song for more options.':'NO TRACKS — use +FILES / +FOLDER or drag audio files here.\nThey stay saved in this browser.\n\nTip: right-click any track, slider or empty area for more options.'));L.lastChild.style.whiteSpace='pre-line';if(coarse&&!APP){const c=h('button','cta','＋  ADD SONGS');c.onclick=()=>$('#bf').click();L.lastChild.append(c)}return}
+if(!T.length&&tab!='pl'){L.append(h('div','empty',NATIVE?(noAcc?'ALLOW ACCESS TO YOUR MUSIC\nORPHEUS lists the songs already on your phone. Nothing is copied or uploaded.':'NO SONGS FOUND ON THIS PHONE.\nMusic you add to the phone shows up here automatically.\n\nTip: long-press any song for more options.'):APP?'NO TRACKS — click +FOLDER and pick your music folder.\nSongs stay where they are; anything you add to that folder later appears here automatically.\n\nTip: right-click any track, slider or empty area for more options.':coarse?'NO SONGS YET — tap the button below and choose your music.\nThey are kept inside this app on your phone.\n\nTip: long-press any song for more options.':'NO TRACKS — use +FILES / +FOLDER or drag audio files here.\nThey stay saved in this browser.\n\nTip: right-click any track, slider or empty area for more options.'));L.lastChild.style.whiteSpace='pre-line';if(NATIVE&&noAcc){const c=h('button','cta','ALLOW ACCESS');c.onclick=allow;L.lastChild.append(c)}else if(coarse&&!APP){const c=h('button','cta','＋  ADD SONGS');c.onclick=()=>$('#bf').click();L.lastChild.append(c)}return}
 if(tab=='lib'){if(APP&&folders.length){const w=h('small','',folders.map(bn).join(' · '));w.title=folders.join('\n');w.style.display='block';w.style.marginBottom='4px';w.style.overflow='hidden';w.style.textOverflow='ellipsis';w.style.whiteSpace='nowrap';L.append(w)}
 const s=h('input');s.type='search';s.placeholder='Search…';s.value=lq;const box=document.createElement('div');
 const draw=()=>{box.textContent='';const q=lq.toLowerCase(),f=document.createDocumentFragment();T.forEach(t=>{if(!q||(t.ti+' '+t.ar).toLowerCase().includes(q))f.append(row(t,'lib'))});box.append(f)};
@@ -561,7 +569,7 @@ const it=[{t:coarse?'＋  Add songs…':'＋  Add files…',f:()=>$('#bf').click
 {t:'Sleep timer',sub:[15,30,60,0].map(m=>({t:m?m+' min':'Off',f:()=>sleep(m)}))}];
 if(APP)it.push({t:'Library ('+folders.length+' folder'+(folders.length==1?'':'s')+')',sub:[{t:'Add folder…',f:()=>APP.pickFolder()},{t:'Add files…',f:()=>APP.pickFiles()},{t:'Rescan folders now',f:()=>APP.rescan()},{t:'Restore removed tracks',f:()=>APP.restore()},...(folders.length?['-',...folders.map(d=>({t:'Stop watching: '+bn(d),f:()=>APP.removeFolder(d)}))]:[])]});
 if(APP)it.push('-',{t:ck(fsState,'Fullscreen   F11'),f:()=>APP.fullscreen()},{t:'Minimize',f:()=>APP.minimize()},{t:'Exit   Ctrl+Q',f:()=>APP.quit()});
-if(!APP)it.push('-',{t:coarse?'⬇  Install app':'⬇  Get the Windows app',f:dlOpen});
+if(!APP&&!NATIVE)it.push('-',{t:coarse?'⬇  Install app':'⬇  Get the Windows app',f:dlOpen});
 return it}
 function trackItems(id,ctx,i){const on=Q[qi],ls=Object.keys(pl),it=[{t:'▶︎  Play',f:()=>pk(id)}];
 if(Q.includes(id))it.push({t:'Play next',dis:id===on,f:()=>{Q.splice(Q.indexOf(id),1);Q.splice(Q.indexOf(on)+1,0,id);qi=Q.indexOf(on);sv();rl()}});
@@ -570,7 +578,7 @@ it.push('-',{t:fav.has(id)?'☆  Remove favorite':'★  Add to favorites',f:()=>
 {t:'Add to list',sub:ls.length?ls.map(k=>({t:(pl[k].includes(id)?'✓ ':'   ')+k,f:()=>{if(!pl[k].includes(id)){pl[k].push(id);sv()}}})):[{t:'No lists yet — open the Lists tab',f:()=>{tab='pl';rl()}}]},'-');
 if(ctx=='q'){it.push({t:'Move up',dis:i<=0,f:()=>moveQ(i,i-1)},{t:'Move down',dis:i>=Q.length-1,f:()=>moveQ(i,i+1)},{t:'Remove from queue',f:()=>{const c=Q[qi];Q.splice(i,1);qi=Q.indexOf(c);sv();rl()}})}
 if(ctx=='pl')it.push({t:'Remove from list',f:()=>{pl[plSel]=pl[plSel].filter(x=>x!=id);sv();rl()}});
-const tk=tr(id);if(tk&&tk.disk)it.push({t:'Show in folder',f:()=>APP.reveal(id)},{t:'Remove from library (file stays on disk)',f:()=>APP.ignore(id)});
+const tk=tr(id);if(tk&&tk.disk&&APP)it.push({t:'Show in folder',f:()=>APP.reveal(id)},{t:'Remove from library (file stays on disk)',f:()=>APP.ignore(id)});
 else it.push({t:'Delete from library…',f:()=>{if(tk&&confirm('Delete "'+tk.ti+'" from the library?'))del(id)}});return it}
 function textItems(t){return[{t:'Cut',f:()=>{t.focus();document.execCommand('cut')}},{t:'Copy',f:()=>{t.focus();document.execCommand('copy')}},{t:'Paste',f:()=>{t.focus();document.execCommand('paste')}},{t:'Select all',f:()=>{t.focus();t.select()}}]}
 function showCtx(t,x,y){const r=t.closest('.row[data-id]'),s=t.closest('input[type=range]');let it;
@@ -621,7 +629,7 @@ let dlO=null,ipE=null;
 const iOS=/iPhone|iPad|iPod/i.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 /* PWA: offline + installable (needs https or localhost) */
-if(!APP&&'serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if(!APP&&!NATIVE&&'serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();ipE=e;const b=$('#pwab');if(b)b.style.display=''});
 addEventListener('appinstalled',()=>{ipE=null;const b=$('#pwab');if(b)b.style.display='none'});
 function dlClose(){if(dlO)dlO.classList.remove('show');try{localStorage.setItem('orpheus_dl','1')}catch{}}
@@ -638,14 +646,15 @@ function dlOpen(){if(APP)return;if(!dlO){
  dlO.addEventListener('click',e=>{if(e.target===dlO)dlClose()});addEventListener('keydown',e=>{if(e.key=='Escape'&&dlO.classList.contains('show'))dlClose()})}
  dlO.classList.add('show')}
 $('#bdl').onclick=dlOpen;if(coarse)$('#bdl').textContent='⬇ App';
-if(!APP&&!standalone&&!coarse){let seen=0;try{seen=localStorage.getItem('orpheus_dl')}catch{}if(!seen)setTimeout(dlOpen,1200)}
+if(!APP&&!NATIVE&&!standalone&&!coarse){let seen=0;try{seen=localStorage.getItem('orpheus_dl')}catch{}if(!seen)setTimeout(dlOpen,1200)}
 /* boot */
 th();ap();rr();rl();fr();
 window.booted=(async()=>{const all=await tx('readonly',s=>s.getAll())||[],pks=new Map();T=[];
 for(const r of all){if(r.id[0]!=='\u0001'){if(r.disk)cache.set(r.id,r);else if(!APP)T.push(r)}else if(r.id.startsWith('\u0001pk'))pks.set(r.id.slice(3),r.pk);else if(r.id=='\u0001bg')setBg(r.blob)}
 T.forEach(t=>{t.pk=pks.get(t.id);tm.set(t.id,t)});cache.forEach(t=>t.pk=pks.get(t.id));
-if(APP){const lb=await APP.getLibrary();folders=lb.folders||[];upsert(lb.files,1);
- const live=new Set(lb.files.map(e=>e.p));cache.forEach((t,id)=>{if(!live.has(id)){tx('readwrite',s=>s.delete(id));tx('readwrite',s=>s.delete('\u0001pk'+id))}});cache.clear();
+const lb=APP?await APP.getLibrary():NATIVE?await andList():null;
+if(lb){folders=lb.folders||[];upsert(lb.files,1);
+ const live=new Set(lb.files.map(e=>e.p));if(!lb.noAcc)cache.forEach((t,id)=>{if(!live.has(id)){tx('readwrite',s=>s.delete(id));tx('readwrite',s=>s.delete('\u0001pk'+id))}});cache.clear();
  const s=new Set(),sq=(st.q||[]).filter(i=>tm.has(i)&&!s.has(i)&&s.add(i));Q=[...sq,...T.map(t=>t.id).filter(i=>!s.has(i))]}
 else{T.sort(srt);Q=(st.q||[]).filter(i=>tm.has(i));const s=new Set(Q);T.forEach(t=>{if(!s.has(t.id))Q.push(t.id)})}
 if(Q.length){const l=Q.indexOf(st.last);load(l<0?0:l,0,false)}rl();if(APP)APP.ready()})();

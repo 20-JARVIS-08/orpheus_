@@ -36,3 +36,18 @@ Best experience: open the site in Chrome on Android → menu ⋮ → **Install a
 - **Share to ORPHEUS:** in any file manager or app, share audio files → ORPHEUS (works once the app is installed). They are added to the library and start playing.
 - Typing in the search box hides the bottom bars; pull-to-refresh is disabled so swiping down on Now Playing never reloads the page.
 - Android browsers have no folder picker, so only "Add songs" is shown on phones. Songs are stored inside the app's browser storage.
+
+
+## Android app (reads the songs already on the phone)
+
+The Android build wraps this same web UI in Capacitor and lists music straight from Android's
+MediaStore (the index the stock music app uses), so there is nothing to pick or upload and new
+songs appear by themselves. Songs are never copied.
+
+- **Easiest:** push a tag like `v1.0.2` (or run *Build Android APK* from the Actions tab). The APK is
+  attached to the Release / the run's artifacts. Install it and allow the music permission.
+- **Locally:** `npm install --no-save @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7`,
+  `python scripts/android-prepare.py`, then `cd android && ./gradlew assembleDebug`
+  (needs JDK 21 and the Android SDK).
+
+Native code lives in `android-overlay/` and is copied into the generated `android/` project by the script.

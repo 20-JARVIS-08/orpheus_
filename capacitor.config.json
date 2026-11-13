@@ -1,0 +1,8 @@
+{
+  "appId": "com.orpheus.audio",
+  "appName": "ORPHEUS",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#000000"
+  }
+}
