@@ -524,13 +524,19 @@ function upsert(list,init){
   if(t.lrcPath!=e.lrc){t.lrcPath=e.lrc||null;t.lrc=undefined;if(Q[qi]==id)lyr(t)}}
  T.sort(srt);runJobs();if(init)return;sv();if(qi<0&&Q.length)load(0,0,false);rl()}
 /* Android app (Capacitor): the library is read from the phone's MediaStore; songs stay where they are, nothing is copied */
-const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),ML=NATIVE?Capacitor.registerPlugin('MediaLibrary'):null;
+const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const cu=u=>typeof Capacitor.convertFileSrc==='function'?Capacitor.convertFileSrc(u):location.origin+u.replace('content:/','/_capacitor_content_');
+function mkML(){const C=Capacitor,N='MediaLibrary';if(typeof C.registerPlugin==='function')return C.registerPlugin(N);
+ /* the Capacitor runtime script is missing: talk to the native bridge directly */
+ const call=m=>o=>C.nativePromise(N,m,o||{});
+ return{checkAccess:call('checkAccess'),requestAccess:call('requestAccess'),getTracks:call('getTracks'),openSettings:call('openSettings'),keepAwake:call('keepAwake'),addListener:(ev,cb)=>{try{C.nativeCallback(N,'addListener',{eventName:ev},cb)}catch(e){}return Promise.resolve({remove(){}})}}}
+let ML=null;if(NATIVE){try{ML=mkML()}catch(e){console.error('MediaLibrary plugin:',e)}}
 let noAcc=0,syncing=0,syncT,denied=0;
-async function andList(){try{const a=await ML.checkAccess();if(!a.granted){noAcc=1;return{files:[],noAcc:1}}noAcc=0;const r=await ML.getTracks();return{files:(r.tracks||[]).map(x=>({p:x.p,mt:x.mt,size:x.size,ti:x.ti,ar:x.ar,u:Capacitor.convertFileSrc(x.p)})),folders:[]}}catch(er){noAcc=1;return{files:[],noAcc:1}}}
+async function andList(){try{const a=await ML.checkAccess();if(!a.granted){noAcc=1;return{files:[],noAcc:1}}noAcc=0;const r=await ML.getTracks();return{files:(r.tracks||[]).map(x=>({p:x.p,mt:x.mt,size:x.size,ti:x.ti,ar:x.ar,u:cu(x.p)})),folders:[]}}catch(er){noAcc=1;return{files:[],noAcc:1}}}
 async function andSync(){if(syncing)return;syncing=1;try{const lb=await andList();if(!lb.noAcc){const live=new Set(lb.files.map(e=>e.p));T.filter(t=>t.disk&&!live.has(t.id)).forEach(t=>del(t.id,1));upsert(lb.files)}else rl()}finally{syncing=0}}
 async function allow(){try{const r=await ML.requestAccess();if(r.granted){denied=0;return andSync()}denied++;if(denied>1)ML.openSettings();else flash('ACCESS NEEDED TO LIST YOUR SONGS')}catch{}}
 const nq=()=>APP?APP.pickFolder():NATIVE&&noAcc?allow():$('#fi').click();
-if(NATIVE){ML.addListener('libraryChanged',()=>{clearTimeout(syncT);syncT=setTimeout(andSync,1500)});document.addEventListener('visibilitychange',()=>{if(!document.hidden)andSync()})}
+if(NATIVE){try{Promise.resolve(ML.addListener('libraryChanged',()=>{clearTimeout(syncT);syncT=setTimeout(andSync,1500)})).catch(()=>{})}catch(e){}document.addEventListener('visibilitychange',()=>{if(!document.hidden)andSync()})}
 if(APP)APP.onUpdate(d=>{if(d.folders)folders=d.folders;(d.remove||[]).forEach(id=>{if(tr(id))del(id,1)});if(d.add&&d.add.length)upsert(d.add);else rl()});
 /* HUD dial + gauges */
 const cvz=$('#vz'),cwf=$('#wf'),cdial=$('#dial'),cg=[...document.querySelectorAll('.g')],eTm=$('#tm'),ePP=$('#pp'),eMk=$('#mk'),eSt=$('#stat'),eLy=$('#ly'),eMpp=$('#mpp'),eC=$('#C'),eTi=$('#ti'),eAr=$('#ar'),eMt=$('#mt'),eMa=$('#ma'),eMimg=$('#mimg'),eMpg=$('#mpg'),eT1=$('#t1'),eT2=$('#t2'),eNsh=$('#nsh'),eNrp=$('#nrp'),eNlk=$('#nlk'),eNly=$('#nly'),eNvr=$('#nvr'),eNrpI=$('#nrp i'),eNlkI=$('#nlk i'),docEl=document.documentElement;

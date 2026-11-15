@@ -30,6 +30,18 @@ for f in ('index.html', 'manifest.webmanifest', 'vocal-worklet.js', 'sep-worker.
 for d in ('fonts', 'icons', 'lib', 'vendor', 'models'):
     shutil.copytree(d, os.path.join('www', d))
 
+# 1b) Capacitor's JavaScript runtime (defines Capacitor.registerPlugin / convertFileSrc). The native side only injects a tiny
+#     bridge, so without this file the page has no registerPlugin and the app script crashes on start.
+core = os.path.join('node_modules', '@capacitor', 'core', 'dist', 'capacitor.js')
+if not os.path.exists(core):
+    sys.exit('Missing ' + core + ' (run: npm install --no-save @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7)')
+shutil.copy(core, os.path.join('www', 'capacitor-core.js'))
+wi = os.path.join('www', 'index.html')
+h = open(wi, encoding='utf-8').read()
+if '<head>' not in h:
+    sys.exit('index.html has no plain <head> tag to attach the Capacitor runtime to')
+open(wi, 'w', encoding='utf-8').write(h.replace('<head>', '<head><script src="capacitor-core.js"></script>', 1))
+
 # 2) android project
 if not os.path.isdir('android'):
     run('npx', 'cap', 'add', 'android')
