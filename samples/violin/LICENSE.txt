@@ -1,0 +1,3 @@
+Violin samples: MusyngKite soundfont rendered by gleitz/midi-js-soundfonts
+(https://github.com/gleitz/midi-js-soundfonts), licensed Creative Commons Attribution-ShareAlike 3.0
+(https://creativecommons.org/licenses/by-sa/3.0/). Keep this notice when you publish them.
