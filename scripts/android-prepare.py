@@ -66,6 +66,28 @@ if os.path.exists(gp):
         g2 = g.rstrip('\n') + '\norg.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8\n'
     open(gp, 'w', encoding='utf-8').write(g2)
 
+# 4c) stable signing key + increasing version code.
+#     A fresh CI machine would otherwise invent a new random debug key on every build, and Android refuses to
+#     install an update signed with a different key than the installed one ("App not installed").
+import time
+shutil.copy(os.path.join('android-overlay', 'orpheus.jks'), os.path.join('android', 'app', 'orpheus.jks'))
+bg = os.path.join('android', 'app', 'build.gradle')
+g = open(bg, encoding='utf-8').read()
+if 'signingConfigs.orpheus' not in g:
+    sign = ("    signingConfigs {\n        orpheus {\n            storeFile file('orpheus.jks')\n"
+            "            storePassword 'orpheus-app'\n            keyAlias 'orpheus'\n            keyPassword 'orpheus-app'\n        }\n    }\n")
+    g, n1 = re.subn(r'(\n\s*android\s*\{[^\n]*\n)', lambda m: m.group(1) + sign, g, count=1)
+    g, n2 = re.subn(r'(buildTypes\s*\{)', lambda m: m.group(1) + "\n        debug {\n            signingConfig signingConfigs.orpheus\n        }", g, count=1)
+    g, n3 = re.subn(r'(\n\s*release\s*\{)', lambda m: m.group(1) + "\n            signingConfig signingConfigs.orpheus", g, count=1)
+    if not (n1 and n2 and n3):
+        sys.exit('Could not patch android/app/build.gradle for signing (%s/%s/%s). Capacitor template changed?' % (n1, n2, n3))
+vc = os.environ.get('ORPHEUS_VERSION_CODE') or str(int(time.time() // 60))   # minutes since 1970: always larger than the previous build
+g, n4 = re.subn(r'versionCode\s*=?\s*\d+', 'versionCode ' + vc, g, count=1)
+if not n4:
+    sys.exit('versionCode not found in build.gradle')
+open(bg, 'w', encoding='utf-8').write(g)
+print('signing + versionCode', vc, 'ok')
+
 # 5) launcher icons (adaptive: maskable icon on its own background colour)
 try:
     from PIL import Image

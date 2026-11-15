@@ -1,5 +1,6 @@
 name: Build Android APK
-# Run by pushing a tag like v1.0.0 (attaches the APK to the Release) or by hand from the Actions tab.
+# Run by hand (Actions tab -> Build Android APK -> Run workflow) or by pushing a tag like v1.0.0.
+# Every run signs with the SAME key (android-overlay/orpheus.jks), so each new APK installs over the previous one.
 on:
   push:
     tags: ['v*']
@@ -9,6 +10,7 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
     steps:
@@ -27,17 +29,26 @@ jobs:
       - run: npm install --no-save --no-package-lock @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
       - run: node setup-ai.js
       - run: python scripts/android-prepare.py
-      - run: ./gradlew assembleDebug
+      - run: ./gradlew assembleDebug --no-daemon
         working-directory: android
       - run: cp android/app/build/outputs/apk/debug/app-debug.apk ORPHEUS.apk
-      - name: Publish to Release
+      - name: Check the APK (signature, version, minimum Android)
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/apksigner" verify --verbose --print-certs ORPHEUS.apk | head -12
+          "$BT/aapt" dump badging ORPHEUS.apk | grep -E "^package:|^sdkVersion|^targetSdkVersion" || true
+          ls -l ORPHEUS.apk
+      - name: Publish to the Release (tag builds)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: ORPHEUS.apk
-      - name: Keep the file when run by hand
+      - name: 'Publish to the android-latest pre-release (manual builds, direct APK download)'
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v4
+        uses: softprops/action-gh-release@v2
         with:
-          name: orpheus-android
-          path: ORPHEUS.apk
+          tag_name: android-latest
+          name: ORPHEUS Android (latest build)
+          prerelease: true
+          make_latest: false
+          files: ORPHEUS.apk
