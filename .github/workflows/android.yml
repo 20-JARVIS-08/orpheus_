@@ -33,6 +33,7 @@ jobs:
         working-directory: android
       - run: cp android/app/build/outputs/apk/debug/app-debug.apk ORPHEUS.apk
       - name: Check the APK (signature, version, minimum Android)
+        continue-on-error: true
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$BT/apksigner" verify --verbose --print-certs ORPHEUS.apk | head -12

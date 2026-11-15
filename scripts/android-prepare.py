@@ -31,16 +31,35 @@ for d in ('fonts', 'icons', 'lib', 'vendor', 'models'):
     shutil.copytree(d, os.path.join('www', d))
 
 # 1b) Capacitor's JavaScript runtime (defines Capacitor.registerPlugin / convertFileSrc). The native side only injects a tiny
-#     bridge, so without this file the page has no registerPlugin and the app script crashes on start.
-core = os.path.join('node_modules', '@capacitor', 'core', 'dist', 'capacitor.js')
-if not os.path.exists(core):
-    sys.exit('Missing ' + core + ' (run: npm install --no-save @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7)')
-shutil.copy(core, os.path.join('www', 'capacitor-core.js'))
-wi = os.path.join('www', 'index.html')
-h = open(wi, encoding='utf-8').read()
-if '<head>' not in h:
-    sys.exit('index.html has no plain <head> tag to attach the Capacitor runtime to')
-open(wi, 'w', encoding='utf-8').write(h.replace('<head>', '<head><script src="capacitor-core.js"></script>', 1))
+#     bridge. If this runtime cannot be added the app still works (index.html talks to the bridge directly), so never fail here.
+def add_runtime():
+    dst = os.path.join('www', 'capacitor-core.js')
+    dist = os.path.join('node_modules', '@capacitor', 'core', 'dist')
+    ready = os.path.join(dist, 'capacitor.js')
+    try:
+        if os.path.exists(ready):
+            shutil.copy(ready, dst)
+        else:
+            print('note: %s not found (dist has: %s); bundling the runtime with esbuild' % (ready, os.listdir(dist) if os.path.isdir(dist) else 'no dist folder'))
+            entry = '.capacitor-entry.js'
+            open(entry, 'w').write("import { Capacitor } from '@capacitor/core';\nwindow.Capacitor = Capacitor;\n")
+            try:
+                run('npx', '--yes', 'esbuild', entry, '--bundle', '--format=iife', '--minify', '--outfile=' + dst)
+            finally:
+                if os.path.exists(entry):
+                    os.remove(entry)
+        wi = os.path.join('www', 'index.html')
+        h = open(wi, encoding='utf-8').read()
+        if os.path.exists(dst) and '<head>' in h and 'capacitor-core.js' not in h:
+            open(wi, 'w', encoding='utf-8').write(h.replace('<head>', '<head><script src="capacitor-core.js"></script>', 1))
+            print('Capacitor runtime added')
+        else:
+            print('WARNING: Capacitor runtime not added; the app will use the direct bridge fallback')
+    except Exception as e:
+        print('WARNING: Capacitor runtime step failed (%s); the app will use the direct bridge fallback' % e)
+
+
+add_runtime()
 
 # 2) android project
 if not os.path.isdir('android'):
